@@ -1,0 +1,94 @@
+---
+title: "Examples"
+subtitle: "Every module, with its source and its result."
+description: "Worked examples of the four Typst Extras modules, each with the source and the text it produces in the PDF."
+---
+
+The examples come from the [`example.qmd`](https://github.com/mcanouil/quarto-typst-extras/blob/main/example.qmd) file in the repository and from the tests of the extension.
+Render them with `quarto render example.qmd --to typst`.
+This site renders HTML, so each section shows the source and the text that the Typst PDF contains.
+
+## Lists of floats
+
+```yaml
+extensions:
+  typst-extras:
+    list-of: [tbl, lst]
+```
+
+The PDF starts the body with a list of tables and a list of listings:
+
+```text
+List of Tables
+Table 1.1 A small table. . . . . 1
+Table A.1 A table in the appendix. . . . . 1
+List of Listings
+Listing 1.1 A short script. . . . . 1
+```
+
+## Alternative text for formulas
+
+```markdown
+The energy is [$E = mc^2$]{alt="E equals m c squared"}.
+```
+
+The formula looks the same on the page.
+The PDF now carries the alternative text, which a screen reader reads in place of the formula.
+
+## Appendix and supplementary sections
+
+```yaml
+number-sections: true
+crossref:
+  chapters: true
+extensions:
+  typst-extras:
+    sections:
+      appendix-delimiter: "."
+      supplementary-prefix: "S"
+```
+
+```markdown
+# Method
+
+A table with `chapters: true`: Table 1.1.
+
+# Extra results {.appendix}
+
+A table in the appendix: Table A.1.
+
+# Raw data {.supplementary}
+
+Supplementary text.
+```
+
+The PDF reads, in this order:
+
+```text
+1 Method
+Table 1.1: A small table.
+Appendix A — Extra results
+Table A.1: A table in the appendix.
+S1 Raw data
+```
+
+With `appendix-delimiter: ""`, the appendix table reads `Table A1`.
+
+## Watermark
+
+```yaml
+extensions:
+  typst-extras:
+    watermark:
+      text: "DRAFT"
+      opacity: 15%
+      angle: -45deg
+      colour: gray
+```
+
+Every page carries the text `DRAFT`, in grey at 15% opacity and rotated by 45 degrees.
+To use an image, replace `text` with `image: path/to/image.svg`, and fade the image file first.
+
+## Source
+
+The repository ships a short, standalone starting point you can copy: [`example.qmd`](https://github.com/mcanouil/quarto-typst-extras/blob/main/example.qmd).

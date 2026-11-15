@@ -1,0 +1,41 @@
+---
+title: Lists of floats
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: true
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'List of Figures' && pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'List of Tables' && pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'List of Listings' && test "$(grep -c '^#let typst-extras-list-of' "${EXTENSION_TEST_INPUT%.qmd}.typ")" = 1
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - 'typst-extras-list-of\('
+          - '"quarto-float-fig".*"quarto-float-tbl".*"quarto-float-lst"'
+          - 'List of Figures'
+          - 'List of Tables'
+          - 'List of Listings'
+        - - 'page-break: true'
+---
+
+## Floats
+
+![A blue square.](figure.svg){#fig-square fig-alt="A blue square."}
+
+| A | B |
+|---|---|
+| 1 | 2 |
+
+: A small table. {#tbl-small}
+
+```{.python #lst-code lst-cap="A listing"}
+print("hello")
+```
+
+See @fig-square, @tbl-small and @lst-code.

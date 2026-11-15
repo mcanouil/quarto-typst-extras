@@ -1,0 +1,26 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: Test book
+  author: Mickaël Canouil
+  chapters:
+    - index.qmd
+    - chapter-1.qmd
+    - supplementary.qmd
+    - supplementary-2.qmd
+  appendices:
+    - appendix.qmd
+
+format:
+  typst:
+    keep-typ: true
+
+filters:
+  - typst-extras
+
+extensions:
+  typst-extras:
+    list-of: [fig, tbl]
+    watermark: DRAFT

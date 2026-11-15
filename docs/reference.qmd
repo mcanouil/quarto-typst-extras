@@ -1,0 +1,301 @@
+---
+title: "Reference"
+subtitle: "Every option the typst-extras extension accepts."
+description: "Every option, attribute and class of Typst Extras, with defaults, validation messages and limitations."
+---
+
+## Configuration
+
+Add the filter to a Typst format, and set the options under `extensions` and then `typst-extras` in the front matter.
+No module runs until its option or its markup is present.
+
+```yaml
+format: typst
+number-sections: true
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of:
+      kinds: [fig, tbl, lst]
+      titles:
+        lst: "Code examples"
+      page-break: false
+    watermark:
+      text: "DRAFT"
+      opacity: 15%
+      angle: -45deg
+      colour: gray
+    sections:
+      appendix-delimiter: "."
+      supplementary-prefix: "S"
+```
+
+### Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `list-of` | boolean, list or map | none | Add lists of floats at the start of the body. |
+| `list-of.kinds` | `true` or list | `true` | The kinds to list. |
+| `list-of.titles` | map | none | A title for one kind, which replaces the default title. |
+| `list-of.page-break` | boolean | `false` | Put a page break between the lists and after the last one. |
+| `watermark` | string or map | none | Draw a watermark on every page. A string is the text. |
+| `watermark.text` | string | none | The text. Set `text` or `image`, not both. |
+| `watermark.image` | string | none | The path of an image, relative to the document. |
+| `watermark.opacity` | percentage | `15%` | The opacity of the text, from `0%` to `100%`. An image does not accept it. |
+| `watermark.angle` | angle | `-45deg` for text, `0deg` for an image | The rotation, in `deg` or `rad`. |
+| `watermark.size` | length | `4em` | The size of the text, in `pt`, `mm`, `cm`, `in` or `em`. |
+| `watermark.colour` | colour | `gray` | The colour of the text. See [the colour values](#watermark-colour). |
+| `watermark.position` | string | `center` | Where the watermark sits. |
+| `watermark.width` | percentage or length | `50%` | The width of an image. |
+| `sections.appendix-delimiter` | string | `"."` | The text between the appendix letter and the number. |
+| `sections.supplementary-prefix` | string | `"S"` | The prefix of supplementary headings and floats. |
+
+: Typst Extras options. {.striped .hover tbl-colwidths="[27,16,17,40]"}
+
+The extension also reads these Quarto options:
+
+| Option | Use |
+| --- | --- |
+| `crossref.chapters` | Prefix floats, equations, callouts and theorems with the chapter number. |
+| `number-sections` | Number the headings. Chapter prefixes need it. |
+| `crossref.appendix-title` | The label of an appendix heading. The default is the language word for Appendix. |
+| `crossref.appendix-delim` | The text after the appendix letter in a heading. The default is `" —"`. |
+| `crossref.custom` | Custom float kinds, which `list-of` accepts as kinds. |
+| `lof` and `lot` | Quarto's own lists, which `list-of` must not repeat. |
+
+: Quarto options that the extension reads. {.striped .hover tbl-colwidths="[28,72]"}
+
+## Lists of floats
+
+The `list-of` option adds one list for each kind of float that has at least one float in the document.
+A kind with no float adds nothing, not even a heading.
+
+There are three forms:
+
+```yaml
+extensions:
+  typst-extras:
+    list-of: true
+```
+
+```yaml
+extensions:
+  typst-extras:
+    list-of: [fig, lst]
+```
+
+```yaml
+extensions:
+  typst-extras:
+    list-of:
+      kinds: [fig, lst]
+      titles:
+        lst: "Code examples"
+      page-break: true
+```
+
+- The kinds are `fig`, `tbl`, `lst`, and every key of `crossref.custom`.
+- With `true`, the order is figures, tables, listings, then the custom kinds in alphabetical order.
+  With a list, the order is the order of the list.
+- A title comes from `titles`, else from the language of the document (`crossref-lof-title`, `crossref-lot-title` and `crossref-lol-title`).
+  A custom kind uses its `latex-list-of-description`, else its name.
+- The lists start the body, so in Quarto's default Typst format they come after the table of contents.
+  A template that places the start of the body elsewhere also moves the lists.
+- Page breaks are off by default, as for `lof` and `lot`.
+  With `page-break: true`, a break sits between the lists and after the last one.
+
+::: {.callout-warning}
+If `lof` or `lot` is true and `list-of` lists the same kind, the list appears twice.
+The render warns.
+Remove one of the two options.
+:::
+
+## Alternative text for formulas
+
+Add an `alt` attribute to a span that holds only one formula, or to a div that holds only one display formula.
+Typst writes the text into the PDF for screen readers.
+
+```markdown
+The energy is [$E = mc^2$]{alt="E equals m c squared"}.
+
+::: {alt="The sum of the first n integers equals n times n plus one, over two."}
+$$
+\sum_{i=1}^{n} i = \frac{n (n + 1)}{2}
+$$
+:::
+```
+
+- This module needs no option.
+- A formula with a label (`{#eq-energy}`) is left to Quarto, which already handles `alt` on a labelled equation.
+- The text can contain double quotes, backslashes and curly quotes.
+  The extension escapes them for Typst.
+- In other formats, the extension removes the span or div and keeps the formula.
+
+## Sections
+
+### Numbering
+
+Numbers are flat by default, as in a Quarto article: `Figure 1` and `(1)`.
+With `crossref.chapters: true` and `number-sections: true`, floats, equations, callouts and theorems get the number of the level-1 heading: `Figure 3.1` and `(3.1)`.
+The numbers restart at every numbered level-1 heading.
+
+- Without `number-sections`, the render warns and the numbers stay flat.
+- The extension sets `theorem-inherited-levels` to `1` for this, so a theorem restarts at each level-1 heading.
+  This replaces a value that your template sets.
+- In a book, Quarto already numbers by chapter, and the extension adds nothing to that.
+
+### Appendices
+
+Put the class `.appendix` on a level-1 heading to start an appendix section.
+The section is that heading and every block up to the next level-1 heading.
+Appendix sections move to the end of the body, in source order, before the bibliography.
+
+```markdown
+# Extra results {.appendix}
+
+Text of the appendix.
+
+## Detail
+
+More text.
+```
+
+| Item | Reads as |
+| --- | --- |
+| Level-1 heading | `Appendix A — Extra results` |
+| Sub-heading | `A.1 Detail` |
+| Figure, table or listing | `Figure A.1` |
+| Equation | `(A.1)` |
+| Reference to the section | `Appendix A` |
+| Reference to the sub-heading | `Appendix A.1` |
+
+: Appendix numbering with the default options. {.striped .hover tbl-colwidths="[40,60]"}
+
+- Appendix headings are always lettered, even without `number-sections`.
+  Without `number-sections`, sub-headings have no number, so you cannot refer to them.
+- Floats, equations, callouts and theorems in an appendix always have the prefix.
+- `sections.appendix-delimiter` sets the text between the letter and the number.
+  An empty string gives `Figure A1` and `(A1)`.
+- The label comes from `crossref.appendix-title`, and the separator from `crossref.appendix-delim`.
+- A section moves once.
+  The heading that ends it stays where it was.
+- The extension scans top-level blocks only.
+  A class on a heading inside a div or a callout does nothing, and does not warn.
+- A class on a heading that is not at level 1 stays in place, and the render warns.
+
+### Supplementary sections
+
+Put the class `.supplementary` on a level-1 heading.
+These sections move to the end, after the appendices, and use the journal style.
+
+| Item | Reads as |
+| --- | --- |
+| Heading | `S1 Raw data` |
+| Sub-heading | `S1.1` |
+| Figure or table | `Figure S1`, `Table S1` |
+| Equation | `(S1)` |
+| Reference to the section | `S1` |
+
+: Supplementary numbering with the default options. {.striped .hover tbl-colwidths="[40,60]"}
+
+- Floats form one sequence across all supplementary sections.
+- `sections.supplementary-prefix` sets the prefix.
+- The heading has no label word, because Quarto has no language key for it.
+  The heading text is the text you wrote.
+
+### Books
+
+In a Typst book, the book numbers the chapters and builds the appendices.
+
+- Use the book's `appendices:` list for appendices.
+  The class `.appendix` does nothing in a book, and the render warns.
+- Put `.supplementary` on the level-1 heading of a chapter.
+  The chapter stays in place, and its headings, floats, equations, callouts and theorems read `S1`.
+- List supplementary chapters last, and keep them together.
+  Then they share one sequence: `Figure S1`, `Figure S2`.
+- A body chapter between supplementary chapters, or after them, breaks the numbering.
+  The render warns.
+- The lists of floats, the alternative text and the watermark work as in a single document.
+
+## Watermark
+
+The `watermark` option draws text or an image on every page.
+The watermark sits in the page foreground and inside an artefact, so Quarto's logo stays and screen readers skip it.
+
+```yaml
+extensions:
+  typst-extras:
+    watermark: "DRAFT"
+```
+
+```yaml
+extensions:
+  typst-extras:
+    watermark:
+      image: logo-faded.svg
+      position: bottom-right
+      width: 30%
+```
+
+- Set `text` or `image`, not both.
+- An image has no `opacity`, because Typst has no such setting for images.
+  Fade the image file before you use it.
+  Setting `opacity` with an image is an error.
+- [`colour`]{#watermark-colour} accepts a Typst colour name or a hex value, such as `"#cc0000"`.
+  The names are `black`, `gray`, `silver`, `white`, `navy`, `blue`, `aqua`, `teal`, `eastern`, `purple`, `fuchsia`, `maroon`, `red`, `orange`, `yellow`, `olive`, `green` and `lime`.
+- `position` is one of `center`, `top`, `bottom`, `left`, `right`, `top-left`, `top-right`, `bottom-left` and `bottom-right`.
+- In a book, the watermark also shows on the cover page.
+
+## Validation
+
+These problems stop the render with an error that starts with `[typst-extras]`:
+
+- `extensions.typst-extras` is not a map, or has a key that is not `list-of`, `watermark` or `sections`.
+  The message names the key and lists the known keys.
+- `list-of` has a value that is not `true`, a list or a map, or one of its parts has the wrong type.
+- `list-of` is an empty list, or `list-of.kinds` is `false` or an empty list.
+- The `list-of` map has a key that is not `kinds`, `titles` or `page-break`.
+- `list-of` names a kind that is not known.
+  The message lists the known kinds.
+- `sections` is not a map, or has a key that is not `appendix-delimiter` or `supplementary-prefix`.
+- `sections.appendix-delimiter` or `sections.supplementary-prefix` is not a string.
+- `watermark` has an unknown key, sets both `text` and `image`, sets neither, or gives an empty `text` or `image` string.
+- `watermark` sets `opacity` with an `image`.
+- A watermark value is not valid: `opacity`, `angle`, `size`, `colour`, `position` or `width`.
+  `opacity` must be from `0%` to `100%`, and `size` must use `pt`, `mm`, `cm`, `in` or `em`.
+
+These problems let the render finish, with a warning:
+
+- A top-level `typst-extras:` block is in the front matter.
+  The extension ignores it, and the warning tells you to move it under `extensions: typst-extras:`.
+- `list-of` lists a kind that `lof` or `lot` also lists.
+- `crossref.chapters` is true and `number-sections` is not.
+- `.appendix` or `.supplementary` is on a heading that is not at level 1.
+- `.appendix` is on a chapter heading in a book.
+- A numbered chapter follows a supplementary chapter in a book.
+
+## Limitations
+
+- Every module acts on Typst output only.
+  In other formats, the document stays as it is, except that the `alt` attribute on a formula is removed.
+- Sub-figures lose the prefix in a reference when chapter numbers are on.
+  The parent figure reads `Figure 2.2`, and `@fig-left` reads `Figure 2a`.
+  Quarto builds the sub-figure number inside its own function.
+  Refer to the parent figure when the number must be exact.
+- With chapter numbers on, a float before the first numbered level-1 heading reads `Figure 0.1`.
+  Put the first float after the first numbered level-1 heading.
+- Floats in a wide block (`column: page` and similar) keep flat numbers, because Quarto gives them their own numbering.
+- The numbering needs Quarto's `numbering.typ` in the template.
+  A custom format that replaces the whole `template.typ` without `$numbering.typ()$` breaks the wraps.
+- The table of contents and the running headers show the full label, `Appendix A — Title`.
+- The watermark also shows on the cover page of a book.
+- The section classes need the heading that Typst sees as level 1 to be the top heading level of the document.
+  Quarto's own shift of `-1` for a document with `##` headings only works.
+  A positive `shift-heading-level-by`, or a `#` heading inside a div while the top-level headings are `##`, is not supported.
+- An appendix or supplementary heading that is also `.unnumbered` cannot be referenced.
+- In a book, a body chapter between or after supplementary chapters breaks the numbering.
+- Typst counts theorems in appendix and supplementary sections with queries, so the cost grows with the number of floats.
+- The tests of the extension that read PDF text need `pdftotext`, which comes with poppler.

@@ -1,0 +1,34 @@
+---
+title: Flat numbering
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: [fig]
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Figure 3' && ! pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Figure 1\.1'
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - ['typst-extras-list-of\(']
+        - ['#typst-extras-reset-chapter\(\(', '#let typst-extras-config =', 'typst-extras-wrap\(equation-numbering']
+---
+
+# One
+
+![First square.](figure.svg){#fig-one fig-alt="A blue square."}
+
+![Second square.](figure.svg){#fig-two fig-alt="A blue square."}
+
+# Two
+
+![Third square.](figure.svg){#fig-three fig-alt="A blue square."}
+
+See @fig-three.

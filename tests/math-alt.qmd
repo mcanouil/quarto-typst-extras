@@ -1,0 +1,48 @@
+---
+title: Maths alt text
+format:
+  typst:
+    keep-typ: true
+  html: default
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          if [ "$EXTENSION_TEST_FORMAT" = typst ]; then
+            test "$(grep -o 'alt: "A"' "${EXTENSION_TEST_INPUT%.qmd}.typ" | wc -l)" -eq 1
+          fi
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - 'math\.equation\(block: false, alt: "x squared", \$x\^2\$\.body\)'
+          - 'math\.equation\(block: true, alt: "Euler''s \\"identity\\" line", \$ e\^\(i pi\) \+ 1 = 0 \$\.body\)'
+          - 'alt: "A"'
+        - ['math\.equation\(block: (true|false), alt: "[^"]*", \[']
+    html:
+      ensureFileRegexMatches:
+        - ['x\^2']
+        - ['math\.equation', 'alt="x squared"', 'Euler']
+---
+
+Inline maths with alt text: [$x^2$]{alt="x squared"}.
+
+::: {alt="Euler's \"identity\" line"}
+$$ e^{i\pi} + 1 = 0 $$
+:::
+
+$$ a = b $$ {#eq-a alt="A"}
+
+```{=typst}
+#context {
+  let equations = query(math.equation)
+  assert.eq(equations.len(), 3, message: "expected one equation per source maths")
+  assert.eq(equations.map(e => (e.alt, e.block)), (
+    ("x squared", false),
+    ("Euler's \"identity\" line", true),
+    ("A", true),
+  ))
+}
+```

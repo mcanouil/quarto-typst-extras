@@ -1,0 +1,9 @@
+# Appendix A
+
+The appendix.
+
+![An appendix square.](figure.svg){#fig-appendix fig-alt="A blue square."}
+
+$$
+z = 3
+$$ {#eq-appendix}

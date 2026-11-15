@@ -1,0 +1,52 @@
+---
+title: Callout numbering
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+crossref:
+  chapters: true
+language:
+  callout-tip-title: Hint
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Note 1.1' 'Hint 1.1' 'Note 2.1' 'Note 2.2' 'Hint 2.1' 'See Note 2.2'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - '#let callout-numbering = typst-extras-wrap\(callout-numbering, "1"\)'
+---
+
+# One
+
+::: {#nte-one .callout-note}
+First note.
+:::
+
+::: {#tip-one .callout-tip}
+First tip.
+:::
+
+# Two
+
+::: {#nte-two .callout-note}
+Second chapter note.
+:::
+
+::: {#nte-three .callout-note}
+Another note.
+:::
+
+::: {#tip-two .callout-tip}
+Second chapter tip.
+:::
+
+See @nte-three.

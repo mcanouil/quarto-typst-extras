@@ -1,0 +1,113 @@
+---
+title: "Typst Extras"
+subtitle: "Lists of floats, formula alternative text, appendices and watermarks for Typst output."
+description: "Typst Extras adds five features to any Quarto Typst format: lists of floats, chapter numbering, alternative text for formulas, appendix and supplementary sections, and watermarks."
+authors:
+  - name: "Mickaël CANOUIL, _Ph.D._"
+    orcid: "0000-0002-3396-4549"
+    url: "https://mickael.canouil.fr"
+page-layout: full
+title-block-style: none
+toc: false
+anchor-sections: false
+---
+
+::: {.atelier-landing}
+
+::: {.atelier-hero .gradient .glow}
+
+::: {.atelier-hero-text}
+
+[Quarto filter]{.atelier-eyebrow}
+
+# Typst Extras
+
+[Lists of floats, formula alternative text, appendices and watermarks for Typst output.]{.atelier-lead}
+
+::: {.atelier-actions}
+
+[Get started](#quick-start){.btn .btn-primary .btn-lg}
+[See the examples](examples.qmd){.btn .btn-outline-primary .btn-lg}
+
+:::
+
+::: {.panel-tabset}
+
+## Terminal
+
+```{.bash filename="Terminal"}
+quarto add {{< var extension.reference >}}
+```
+
+This will install the extension under the `_extensions` subdirectory.
+If you are using version control, you will want to check in this directory.
+
+## Quarto Wizard
+
+Install it from your editor with [Quarto Wizard](https://m.canouil.dev/quarto-wizard):
+
+::: {.btn-group role="group" aria-label="Quarto Wizard installer options"}
+
+[Visual Studio Code](vscode://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in Visual Studio Code using the Quarto Wizard extension."}
+[Positron](positron://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in Positron using the Quarto Wizard extension."}
+[VSCodium](vscodium://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in VSCodium using the Quarto Wizard extension."}
+
+:::
+
+:::
+
+:::
+
+::: {.atelier-hero-figure}
+
+[![The Quarto mark, a quartered circle.](assets/icons/icon.svg){width="320" height="312"}]{}
+
+:::
+
+:::
+
+Quarto's Typst output has no list of listings, no alternative text for a formula, no appendix that works outside a book, and no watermark.
+You can write the Typst for each one, but you then copy it into every project and keep it in step with your template.
+Typst Extras does this in one filter, and it works with Quarto's default Typst format, with Typst books and with third-party Typst templates.
+
+## Quick start
+
+Add the filter and set the options in the front matter of the document:
+
+```yaml
+format: typst
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: true
+    watermark: "DRAFT"
+```
+
+Then write the document as usual.
+The render adds a list of every figure, table and listing at the start of the body.
+It also draws the grey text `DRAFT` on every page.
+To move a section to the end as an appendix, put the class `.appendix` on its level-1 heading:
+
+```markdown
+# Extra results {.appendix}
+```
+
+The heading then reads `Appendix A` followed by the title, and the figures in the section read `Figure A.1`.
+
+See the [Reference](reference.qmd) for every option, and the [Examples](examples.qmd) for each of them rendered.
+
+## Where it works
+
+Every module acts on Typst output only.
+In other formats, the document stays as it is, except that the `alt` attribute on a formula is removed.
+The extension needs Quarto 1.12 or newer.
+
+## Links
+
+- [Reference](reference.qmd) for the full option list.
+- [Examples](examples.qmd) for rendered output.
+- [Changelog](changelog.qmd) for what each release changed.
+- [Source and issues](https://github.com/mcanouil/quarto-typst-extras) on GitHub.
+
+:::

@@ -1,0 +1,19 @@
+_site/
+*.html
+*_files/
+.quarto/
+**/*.quarto_ipynb
+/.luarc.json
+.DS_Store
+/example.pdf
+/example.typ
+
+# The documentation website keeps its own .gitignore for the files it generates.
+
+# Test output.
+tests/_output/
+tests/_results/
+tests/typst/*.pdf
+tests/**/_extensions/local/
+tests/**/_book/
+tests/custom-format/*.pdf

@@ -1,0 +1,33 @@
+---
+title: Chapters without numbered sections
+format:
+  typst:
+    keep-typ: true
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Figure 2' && ! pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -qE 'Figure [0-9]+\.[0-9]'
+    typst:
+      noErrors: true
+      printsMessage:
+        level: WARN
+        regex: 'sections:.*number-sections'
+      ensureTypstFileRegexMatches:
+        - []
+        - ['typst-extras']
+---
+
+# One
+
+![First square.](figure.svg){#fig-one fig-alt="A blue square."}
+
+# Two
+
+![Second square.](figure.svg){#fig-two fig-alt="A blue square."}
+
+See @fig-two.

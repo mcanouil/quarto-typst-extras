@@ -1,0 +1,54 @@
+---
+title: Custom kinds
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+crossref:
+  custom:
+    - kind: float
+      key: vid
+      reference-prefix: Video
+      caption-prefix: Video
+      latex-list-of-file-extension: lov
+      latex-list-of-description: Videos
+    - kind: float
+      key: diag
+      reference-prefix: Diagram
+      caption-prefix: Diagram
+      latex-list-of-file-extension: lod
+      latex-list-of-description: Diag
+extensions:
+  typst-extras:
+    list-of:
+      kinds: [lst, vid, diag]
+      titles:
+        lst: 'Code \"examples\" #1'
+      page-break: true
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Videos' && ! pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Diag'
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - 'Code \\"examples\\" #1'
+          - 'Videos'
+          - 'page-break: true'
+---
+
+## Floats
+
+```{.python #lst-code lst-cap="A listing"}
+print("hello")
+```
+
+::: {#vid-clip}
+A clip placeholder.
+
+Video caption.
+:::
+
+See @lst-code and @vid-clip.

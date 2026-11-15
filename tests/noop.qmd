@@ -1,0 +1,25 @@
+---
+title: No-op guarantee
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - []
+        - ["typst-extras"]
+---
+
+## A heading
+
+![A blue square.](figure.svg){#fig-square fig-alt="A blue square."}
+
+See @fig-square and @eq-square.
+
+$$
+x^2
+$$ {#eq-square}

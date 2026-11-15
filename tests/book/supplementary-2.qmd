@@ -1,0 +1,13 @@
+# More material {.supplementary}
+
+![A second supplementary square.](figure.svg){#fig-supp-two fig-alt="A blue square."}
+
+$$
+w = 4
+$$ {#eq-supp-two}
+
+::: {#nte-supp-two .callout-note}
+A second supplementary note.
+:::
+
+See @fig-supp-two, @eq-supp-two and @nte-supp-two.

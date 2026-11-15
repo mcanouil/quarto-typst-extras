@@ -1,0 +1,28 @@
+# Chapter one
+
+The second chapter.
+
+![A blue square.](figure.svg){#fig-square fig-alt="A blue square."}
+
+See @fig-square.
+
+$$
+y = 2
+$$ {#eq-one}
+
+::: {#nte-one .callout-note}
+A chapter note.
+:::
+
+::: {#thm-one}
+
+## A chapter theorem
+
+A statement.
+:::
+
+# Extra {.appendix}
+
+This chapter has an appendix class, which a book ignores.
+
+![An extra square.](figure.svg){#fig-extra fig-alt="A blue square."}

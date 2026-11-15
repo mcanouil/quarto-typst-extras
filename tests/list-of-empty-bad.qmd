@@ -1,0 +1,23 @@
+---
+title: Empty list-of
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: []
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] list-of: empty list of kinds'
+---
+
+Some text.

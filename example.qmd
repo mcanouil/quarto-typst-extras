@@ -1,0 +1,57 @@
+---
+title: "Typst Extras"
+subtitle: "Quarto Extension"
+author: "Mickaël Canouil"
+format: typst
+number-sections: true
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: [tbl, lst]
+    watermark: "DRAFT"
+    sections:
+      appendix-delimiter: "."
+      supplementary-prefix: "S"
+---
+
+# Method
+
+A formula with alternative text for screen readers: [$E = mc^2$]{alt="E equals m c squared"}.
+
+```{#lst-hello .python lst-cap="A short script."}
+print("Hello")
+```
+
+See @lst-hello.
+
+| Name  | Value |
+|-------|-------|
+| alpha | 1     |
+| beta  | 2     |
+
+: A small table. {#tbl-values}
+
+See @tbl-values.
+
+# Extra results {.appendix}
+
+The section moves to the end of the document and becomes `Appendix A`.
+Its tables read `Table A.1`.
+
+| Name  | Value |
+|-------|-------|
+| gamma | 3     |
+
+: A table in the appendix. {#tbl-extra}
+
+See @tbl-extra.
+
+# Raw data {.supplementary}
+
+This section comes after the appendices.
+Its headings and tables use the prefix `S`.
+
+Read the full documentation at <https://m.canouil.dev/quarto-typst-extras/>.

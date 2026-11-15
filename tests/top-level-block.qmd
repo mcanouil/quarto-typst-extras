@@ -1,0 +1,23 @@
+---
+title: Top-level block
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+typst-extras:
+  watermark: DRAFT
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          ! pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -qF 'DRAFT' || { echo "the top-level block was applied"; exit 1; }
+    typst:
+      noErrors: true
+      printsMessage:
+        level: WARN
+        regex: 'options: the top-level typst-extras block is ignored\. Move it under extensions: typst-extras:'
+---
+
+Some text.

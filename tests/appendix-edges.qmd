@@ -1,0 +1,63 @@
+---
+title: Appendix edge cases
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          dash="$(printf '\342\200\224')"
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          printf '%s' "$text" | grep -qE "Body one.*Inside.*Deep.*Body two.*Appendix A $dash First.*Appendix B $dash Second.*Appendix C $dash Last.*S1 Supporting" || { echo "wrong order"; exit 1; }
+          for expected in 'Figure A.1: First square' 'Figure B.1: Second square' 'Figure C.1: Last square' 'Figure S1: Supporting square' 'Last paragraph.'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          test "$(printf '%s' "$text" | grep -o 'Body two' | wc -l)" -eq 1 || { echo "Body two is not once"; exit 1; }
+          ! printf '%s' "$text" | grep -qE "Appendix [A-Z] $dash (Inside|Deep)" || { echo "a nested or deep heading became an appendix"; exit 1; }
+    typst:
+      noErrors: true
+      printsMessage:
+        level: WARN
+        regex: 'sections:.*level-1.*Deep'
+---
+
+# Body one
+
+::: {.callout-note}
+A note with a heading.
+
+# Inside {.appendix}
+
+Inside text.
+:::
+
+## Deep {.appendix}
+
+Deep text.
+
+# First {.appendix}
+
+![First square.](figure.svg){#fig-first fig-alt="A blue square."}
+
+# Second {.appendix}
+
+![Second square.](figure.svg){#fig-second fig-alt="A blue square."}
+
+# Supporting {.supplementary}
+
+![Supporting square.](figure.svg){#fig-supporting fig-alt="A blue square."}
+
+# Body two
+
+Second body text.
+
+# Last {.appendix}
+
+![Last square.](figure.svg){#fig-last fig-alt="A blue square."}
+
+Last paragraph.

@@ -1,0 +1,25 @@
+---
+title: Bad watermark image opacity
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermark:
+      image: watermark.svg
+      opacity: 10%
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] watermark: opacity does not apply to an image'
+---
+
+Some text.

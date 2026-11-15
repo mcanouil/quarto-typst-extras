@@ -1,0 +1,65 @@
+---
+title: Supplementary sections
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Figure 1: Body square' 'Figure S1: First square' 'Figure S2: Second square' 'Table S1: A table' 'S1 First supplement' 'S1.1 Sub-section' 'S2 Second supplement' 'Theorem S1' 'Note S1' 'See S1 and S1.1' 'See Figure S2 and Theorem S1'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          printf '%s' "$text" | grep -qE "1 Body.*S1 First supplement.*S2 Second supplement" || { echo "wrong order"; exit 1; }
+    typst:
+      noErrors: default
+---
+
+# First supplement {.supplementary #sec-supp}
+
+![First square.](figure.svg){#fig-first fig-alt="A blue square."}
+
+::: {#thm-supp}
+
+## A supplementary theorem
+
+A statement.
+:::
+
+::: {#nte-supp .callout-note}
+A supplementary note.
+:::
+
+## Sub-section {#sec-supp-sub}
+
+| A | B |
+| - | - |
+| 1 | 2 |
+
+: A table. {#tbl-supp}
+
+# Body
+
+![Body square.](figure.svg){#fig-body fig-alt="A blue square."}
+
+::: {#thm-body}
+
+## A body theorem
+
+A statement.
+:::
+
+::: {#nte-body .callout-note}
+A body note.
+:::
+
+See @sec-supp and @sec-supp-sub. See @fig-second and @thm-supp.
+
+# Second supplement {.supplementary}
+
+![Second square.](figure.svg){#fig-second fig-alt="A blue square."}

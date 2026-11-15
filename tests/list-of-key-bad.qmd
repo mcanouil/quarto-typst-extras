@@ -1,0 +1,24 @@
+---
+title: Bad list-of key
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of:
+      kind: [tbl]
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] list-of: unknown key kind'
+---
+
+Some text.

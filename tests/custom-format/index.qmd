@@ -1,0 +1,32 @@
+---
+title: Custom format
+format:
+  bare-typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: [fig]
+_quarto:
+  tests:
+    bare-typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - ["typst-extras", "typst-extras-list-of\\("]
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'List of Figures' && pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Figure A.1' && pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Appendix A'
+---
+
+# A heading
+
+Some text.
+
+![A blue square.](figure.svg){#fig-square fig-alt="A blue square."}
+
+See @fig-square.
+
+# Extra {.appendix}
+
+![An appendix square.](figure.svg){#fig-extra fig-alt="A blue square."}

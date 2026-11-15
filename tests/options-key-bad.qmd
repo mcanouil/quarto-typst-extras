@@ -1,0 +1,23 @@
+---
+title: Bad option key
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermrk: DRAFT
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] options: unknown key watermrk'
+---
+
+Some text.

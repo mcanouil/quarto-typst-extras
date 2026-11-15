@@ -1,0 +1,43 @@
+---
+title: Supplementary sections without numbered sections
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'S1 First supplement' 'S2 Second supplement' 'Figure S1: First square' 'Appendix A'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          ! printf '%s' "$text" | grep -qE 'S1\.1|A\.1 ' || { echo "a sub-heading is numbered"; exit 1; }
+          printf '%s' "$text" | grep -qE 'Body text.*Appendix A.*Appendix detail.*S1 First supplement.*Sub-section' || { echo "wrong order"; exit 1; }
+    typst:
+      noErrors: default
+---
+
+# First supplement {.supplementary}
+
+![First square.](figure.svg){#fig-first fig-alt="A blue square."}
+
+## Sub-section
+
+Sub-section text.
+
+# Body
+
+Body text.
+
+# Extra {.appendix}
+
+## Appendix detail
+
+Appendix text.
+
+# Second supplement {.supplementary}
+
+Second text.

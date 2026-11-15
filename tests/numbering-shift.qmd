@@ -1,0 +1,39 @@
+---
+title: Chapter numbering with shifted headings
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+shift-heading-level-by: -1
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Figure 1.1: First' 'Figure 1.2: Second' 'Figure 2.1: Third' 'Figure 2.2: Fourth'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+    typst:
+      noErrors: default
+---
+
+## One
+
+![First square.](figure.svg){#fig-one fig-alt="A blue square."}
+
+### A sub-section
+
+![Second square.](figure.svg){#fig-two fig-alt="A blue square."}
+
+## Two
+
+![Third square.](figure.svg){#fig-three fig-alt="A blue square."}
+
+## Notes {.unnumbered}
+
+![Fourth square.](figure.svg){#fig-four fig-alt="A blue square."}

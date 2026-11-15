@@ -1,0 +1,26 @@
+---
+_quarto:
+  tests:
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - ["typst-extras", "typst-extras-list-of\\(", "\"quarto-float-fig\".*\"quarto-float-tbl\""]
+      printsMessage:
+        level: WARN
+        regex: "sections:.*Extra.*use the book's appendices: list"
+    run:
+      extension-test:
+        check: |-
+          pdftotext "$EXTENSION_TEST_OUTPUT" - | awk '/^.?Contents$/ && !c {c=NR} /^.?List of Figures$/ && !l {l=NR} END {exit !(c && l && c < l)}' || { echo "lists out of order"; exit 1; }
+          pdftotext -f 1 -l 1 -raw "$EXTENSION_TEST_OUTPUT" - | tr -d ' \n' | grep -q DRAFT || { echo "missing watermark"; exit 1; }
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Figure 1.1: A blue square.' 'See Figure 1.1.' '(1.1)' 'Note 1.1' 'Theorem 1.1 (A chapter theorem)' 'Figure S1: A supplementary square.' 'See Figure S1 and S1.' '(S1)' 'Note S1' 'Theorem S1 (A supplementary theorem)' 'S1.1' 'Figure 2.1: An extra square.' 'S2 More material' 'Figure S2: A second supplementary square.' '(S2)' 'Note S2' 'See Figure S2, Equation (S2) and Note S2.' 'Figure A.1: An appendix square.' '(A.1)'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          ! printf '%s' "$text" | grep -qE 'Figure [0-9]+\.[0-9]+: A supplementary|Figure S[0-9]+: An appendix' || { echo "supplementary numbering leaked"; exit 1; }
+          pdftotext "$EXTENSION_TEST_OUTPUT" - | awk '/^Figure 1\.1: / && !b {b=NR} /^Figure S1: / && !s {s=NR} /^Figure A\.1: / && !a {a=NR} END {exit !(b && s && a && b < s && s < a)}' || { echo "chapters out of order"; exit 1; }
+---
+
+# Preface {.unnumbered}
+
+The first chapter.

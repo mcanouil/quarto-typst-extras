@@ -1,0 +1,44 @@
+---
+title: Appendix with shifted headings
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+shift-heading-level-by: -1
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          dash="$(printf '\342\200\224')"
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          printf '%s' "$text" | grep -qE "1 Intro.*Deep.*2 Methods.*Appendix A $dash Extra.*A.1 Detail" || { echo "wrong order"; exit 1; }
+          printf '%s' "$text" | grep -qF 'Figure A.1: Extra square' || { echo "missing: Figure A.1"; exit 1; }
+    typst:
+      noErrors: true
+      printsMessage:
+        level: WARN
+        regex: 'sections:.*level-1.*Deep'
+---
+
+## Intro
+
+The body.
+
+### Deep {.appendix}
+
+Deep text.
+
+## Extra {.appendix}
+
+![Extra square.](figure.svg){#fig-extra fig-alt="A blue square."}
+
+### Detail
+
+Detail text.
+
+## Methods
+
+The methods.

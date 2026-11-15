@@ -1,0 +1,26 @@
+---
+title: Image watermark
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermark:
+      image: watermark.svg
+      position: top-right
+      width: 30%
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'DRAFT'
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - 'foreground: typst-extras-watermark\(image: "watermark.svg"'
+          - 'position: top \+ right'
+---
+
+Body text under an image watermark.

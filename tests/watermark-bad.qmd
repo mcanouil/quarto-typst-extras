@@ -1,0 +1,25 @@
+---
+title: Bad watermark
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermark:
+      text: DRAFT
+      image: watermark.svg
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] watermark:'
+---
+
+Some text.

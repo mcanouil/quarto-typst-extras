@@ -1,0 +1,67 @@
+---
+title: Chapter numbering
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Figure 1.1: First' 'Figure 2.1: Target' 'See Figure 2.1' '(2.1)' 'Equation (2.1)' 'Theorem 2.1' 'Note 2.1' 'Figure 2.2: A panel' '(a) Left'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - '#let typst-extras-config = \(chapters: true'
+          - '#let equation-numbering = typst-extras-wrap\(equation-numbering, "\(1\)"\)'
+          - 'set figure\(numbering: typst-extras-wrap\(figure\.numbering, "1"\)\)'
+          - 'typst-extras-reset-chapter\(\("quarto-float-fig", "quarto-float-tbl", "quarto-float-lst", "quarto-callout-Note"'
+---
+
+# One
+
+![First square.](figure.svg){#fig-one fig-alt="A blue square."}
+
+$$
+a = b
+$$ {#eq-one}
+
+See @fig-x and @eq-x in the next section.
+
+# Two
+
+![Target square.](figure.svg){#fig-x fig-alt="A blue square."}
+
+$$
+x = y
+$$ {#eq-x}
+
+::: {#thm-x}
+## A theorem
+
+A statement.
+:::
+
+::: {#nte-x .callout-note}
+A note.
+:::
+
+See @thm-x and @nte-x.
+
+::: {#fig-panel layout-ncol=2}
+![Left.](figure.svg){#fig-left fig-alt="A blue square."}
+
+![Right.](figure.svg){#fig-right fig-alt="A blue square."}
+
+A panel.
+:::
+
+See @fig-panel, @fig-left and @fig-right.

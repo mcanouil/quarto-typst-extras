@@ -1,0 +1,23 @@
+---
+title: Langue
+lang: fr
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: [fig]
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -q 'Liste des Figures'
+    typst:
+      noErrors: default
+---
+
+![Un carré bleu.](figure.svg){#fig-square fig-alt="Un carré bleu."}
+
+Voir @fig-square.

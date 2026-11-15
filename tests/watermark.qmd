@@ -1,0 +1,24 @@
+---
+title: Watermark
+format:
+  typst:
+    keep-typ: true
+    logo: figure.svg
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermark: "DRAFT \"v2\""
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | tr -d ' \n' | grep -q 'DRAFT“v2”\|DRAFT"v2"' && grep -q 'background:' "${EXTENSION_TEST_INPUT%.qmd}.typ"
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - 'foreground: typst-extras-watermark\('
+          - 'text: "DRAFT'
+---
+
+Body text under a watermark.

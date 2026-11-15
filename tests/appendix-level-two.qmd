@@ -1,0 +1,38 @@
+---
+title: Appendix with level-2 headings only
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          dash="$(printf '\342\200\224')"
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          printf '%s' "$text" | grep -qE "1 Intro.*2 Methods.*Appendix A $dash Extra.*A.1 Detail" || { echo "wrong order"; exit 1; }
+          for expected in 'Figure A.1: Extra square' 'See Appendix A'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+    typst:
+      noErrors: default
+---
+
+## Intro
+
+See @sec-extra.
+
+## Extra {.appendix #sec-extra}
+
+![Extra square.](figure.svg){#fig-extra fig-alt="A blue square."}
+
+### Detail
+
+Detail text.
+
+## Methods
+
+The methods.

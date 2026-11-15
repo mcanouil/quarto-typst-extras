@@ -1,0 +1,75 @@
+---
+title: Appendix sections
+format:
+  typst:
+    keep-typ: true
+  html: default
+number-sections: true
+bibliography: appendix.bib
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          if [ "$EXTENSION_TEST_FORMAT" != typst ]; then exit 0; fi
+          dash="$(printf '\342\200\224')"
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in "Appendix A $dash Extra" "Appendix B $dash More" 'Figure A.1: Extra square' 'Figure B.1: More square' 'Theorem 1 (A body theorem)' 'Theorem A.1 (An appendix theorem)' 'See Appendix A for more' 'see Appendix A.1 for detail' 'see Figure A.1' '(A.1)' 'Figure 1: Body square'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          printf '%s' "$text" | grep -qE "Intro.*Methods.*Appendix A $dash Extra.*Appendix B $dash More.*Bibliography" || { echo "wrong order"; exit 1; }
+          test "$(printf '%s' "$text" | grep -o 'Methods' | wc -l)" -eq 1 || { echo "Methods is not once"; exit 1; }
+          ! printf '%s' "$text" | grep -qE "(Appendix [A-Z] $dash|[0-9]) Bibliography" || { echo "the bibliography title is numbered"; exit 1; }
+    typst:
+      noErrors: default
+      ensureTypstFileRegexMatches:
+        - - '#typst-extras-part-start\("appendix"'
+          - '#show ref: typst-extras-ref'
+    html:
+      ensureFileRegexMatches:
+        - ['<section[^>]*class="[^"]*appendix', 'Extra']
+        - ['typst-extras']
+---
+
+# Intro
+
+![Body square.](figure.svg){#fig-body fig-alt="A blue square."}
+
+::: {#thm-body}
+
+## A body theorem
+
+A statement.
+:::
+
+See @sec-extra for more, see @sec-extra-detail for detail, and see @fig-extra.
+The details come from @knuth1984.
+
+# Extra {.appendix #sec-extra}
+
+![Extra square.](figure.svg){#fig-extra fig-alt="A blue square."}
+
+$$
+a = b
+$$ {#eq-extra}
+
+::: {#thm-extra}
+
+## An appendix theorem
+
+A statement.
+:::
+
+## Detail {#sec-extra-detail}
+
+Detail text.
+
+# Methods
+
+The methods.
+
+# More {.appendix}
+
+![More square.](figure.svg){#fig-more fig-alt="A blue square."}

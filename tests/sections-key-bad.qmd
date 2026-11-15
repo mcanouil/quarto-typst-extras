@@ -1,0 +1,24 @@
+---
+title: Bad sections key
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    sections:
+      appendix-delim: ""
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] sections: unknown key appendix-delim'
+---
+
+Some text.

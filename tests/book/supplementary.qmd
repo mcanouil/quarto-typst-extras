@@ -1,0 +1,22 @@
+# Supporting material {.supplementary #sec-supp}
+
+![A supplementary square.](figure.svg){#fig-supp fig-alt="A blue square."}
+
+$$
+x = 1
+$$ {#eq-supp}
+
+::: {#nte-supp .callout-note}
+A supplementary note.
+:::
+
+::: {#thm-supp}
+
+## A supplementary theorem
+
+A statement.
+:::
+
+## Details {#sec-supp-details}
+
+See @fig-supp and @sec-supp.

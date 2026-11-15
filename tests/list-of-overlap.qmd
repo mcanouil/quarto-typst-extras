@@ -1,0 +1,23 @@
+---
+title: Overlap with lof
+format:
+  typst:
+    keep-typ: true
+lof: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: [fig]
+_quarto:
+  tests:
+    typst:
+      noErrors: true
+      printsMessage:
+        level: WARN
+        regex: 'list-of.*lof'
+---
+
+![A blue square.](figure.svg){#fig-square fig-alt="A blue square."}
+
+See @fig-square.

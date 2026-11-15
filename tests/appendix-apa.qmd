@@ -1,0 +1,58 @@
+---
+title: Appendix without a delimiter, with chapters
+format:
+  typst:
+    keep-typ: true
+number-sections: true
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    sections:
+      appendix-delimiter: ""
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Figure 1.1: Body square' 'Theorem 1.1 (A body theorem)' 'Figure A1: Extra square' '(A1)' 'A.1 Detail' 'Theorem A1 (An appendix theorem)' 'See Appendix A'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+    typst:
+      noErrors: default
+---
+
+# Intro
+
+![Body square.](figure.svg){#fig-body fig-alt="A blue square."}
+
+::: {#thm-body}
+
+## A body theorem
+
+A statement.
+:::
+
+See @sec-extra.
+
+# Extra {.appendix #sec-extra}
+
+![Extra square.](figure.svg){#fig-extra fig-alt="A blue square."}
+
+$$
+a = b
+$$ {#eq-extra}
+
+::: {#thm-extra}
+
+## An appendix theorem
+
+A statement.
+:::
+
+## Detail
+
+Detail text.
