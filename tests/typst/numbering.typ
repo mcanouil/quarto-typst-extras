@@ -35,7 +35,9 @@
 
 #let fig(body) = figure(body, kind: "quarto-float-fig", supplement: [Figure], caption: body)
 
-#context assert.eq(typst-extras-prefix(), "0.", message: "the prefix uses the heading counter")
+#context assert.eq(typst-extras-prefix(), "", message: "no prefix before the first numbered level-1 heading")
+#fig[before]
+#figure-reads("1", kind: "quarto-float-fig")
 
 #typst-extras-reset-chapter(kinds)
 = One

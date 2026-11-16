@@ -1,0 +1,49 @@
+---
+title: Chapters when the template leaves headings unnumbered
+format:
+  typst:
+    keep-typ: true
+    include-before-body:
+      - text: '#set heading(numbering: none)'
+number-sections: true
+crossref:
+  chapters: true
+filters:
+  - typst-extras
+_quarto:
+  tests:
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'Figure 1: First' 'Figure 2: Second' 'See Figure 2' '(1)' 'Theorem 1' 'Note 1'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          if printf '%s' "$text" | grep -qE '(Figure|Theorem|Note|Equation) \(?0\.'; then echo 'chapter prefix 0 found'; exit 1; fi
+    typst:
+      noErrors: default
+---
+
+# One
+
+![First square.](figure.svg){#fig-one fig-alt="A blue square."}
+
+# Two
+
+![Second square.](figure.svg){#fig-two fig-alt="A blue square."}
+
+$$
+a = b
+$$ {#eq-one}
+
+::: {#thm-x}
+## A theorem
+
+A statement.
+:::
+
+::: {#nte-x .callout-note}
+A note.
+:::
+
+See @fig-two, @eq-one, @thm-x and @nte-x.
