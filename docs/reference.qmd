@@ -147,10 +147,10 @@ With `crossref.chapters: true` and `number-sections: true`, floats, equations, c
 The numbers restart at every numbered level-1 heading.
 
 - Without `number-sections`, the render warns and the numbers stay flat.
-- Before the first numbered level-1 heading, the numbers have no chapter prefix: `Figure 1`.
-  This is also true for a whole document when the template does not number its headings.
 - The extension sets `theorem-inherited-levels` to `1` for this, so a theorem restarts at each level-1 heading.
   This replaces a value that your template sets.
+- Before the first numbered level-1 heading, the numbers have no chapter prefix: `Figure 1`.
+  This is also true for a whole document when the template does not number its headings.
 - In a book, Quarto already numbers by chapter, and the extension adds nothing to that.
 
 ### Appendices
