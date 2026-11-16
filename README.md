@@ -5,7 +5,7 @@ A Quarto extension that adds lists of floats, chapter numbering, alternative tex
 ## Installation
 
 ```bash
-quarto add mcanouil/quarto-typst-extras@0.1.1
+quarto add mcanouil/quarto-typst-extras@0.1.2
 ```
 
 This will install the extension under the `_extensions` subdirectory.
