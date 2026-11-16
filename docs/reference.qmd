@@ -230,6 +230,18 @@ In a Typst book, the book numbers the chapters and builds the appendices.
   For example, after chapters `1`, `2` and `S1`, the next chapter is `3`.
 - The lists of floats, the alternative text and the watermark work as in a single document.
 
+### Templates
+
+A Typst template can read the part of the document from the state with the key `typst-extras-part`.
+The value is `"body"`, `"appendix"` or `"supplementary"`.
+The key is stable, so a template does not need the library of the extension to read it.
+Quarto puts the template before the library in the Typst file, so the template cannot call the functions of the library.
+Read the state in `context`, with `"body"` as the default value.
+
+```typst
+#let part-at(loc) = state("typst-extras-part", "body").at(loc)
+```
+
 ## Watermark
 
 The `watermark` option draws text or an image on every page.

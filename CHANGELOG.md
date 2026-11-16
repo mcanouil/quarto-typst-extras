@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Documentation
+
+- docs: Document the `typst-extras-part` state key, so that templates can read the part of the document.
+
 ## 0.1.1 (2026-11-16)
 
 ### Bug Fixes
