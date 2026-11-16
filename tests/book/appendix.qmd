@@ -7,3 +7,14 @@ The appendix.
 $$
 z = 3
 $$ {#eq-appendix}
+
+::: {#nte-appendix .callout-note}
+An appendix note.
+:::
+
+::: {#thm-appendix}
+
+## An appendix theorem
+
+A statement.
+:::

@@ -147,8 +147,8 @@ local function arguments(map)
     parts[#parts + 1] = 'position: ' .. alignment
   end
   if map.width ~= nil then
-    require_pattern('width', map.width, { NUMBER .. '%%', NUMBER .. '%a%a?' },
-      'a percentage or a length such as 50% or 8cm')
+    local widths = { NUMBER .. '%%', table.unpack(LENGTHS) }
+    require_pattern('width', map.width, widths, 'a percentage, or a length in pt, mm, cm, in or em, such as 50% or 8cm')
     parts[#parts + 1] = 'width: ' .. map.width
   end
   return table.concat(parts, ', ')

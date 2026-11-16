@@ -21,9 +21,6 @@ local M = {}
 --- Name used in messages.
 local MODULE_NAME = 'sections'
 
---- Built-in float kinds, in Quarto's order.
-local BUILTIN_FLOAT_KINDS = { 'fig', 'tbl', 'lst' }
-
 --- Callout types. Quarto names their figure kinds `quarto-callout-<title>`, from the language key `callout-<type>-title`.
 local CALLOUT_TYPES = { 'note', 'tip', 'warning', 'important', 'caution' }
 
@@ -36,6 +33,7 @@ local BLOCK_KEYS = { 'appendix-delimiter', 'supplementary-prefix' }
 --- Order of the fields of `typst-extras-config`.
 local CONFIG_FIELDS = {
   'chapters', 'appendix-delimiter', 'supplementary-prefix', 'appendix-title', 'appendix-delim', 'number-sections',
+  'section-prefix', 'chapter-prefix',
 }
 
 --- Read a string from a metadata map, or return the fallback.
@@ -68,6 +66,8 @@ end
 
 --- Read the section settings from the metadata and the options.
 --- `number-sections` comes from the writer options, because Quarto does not keep it in the metadata.
+--- `section-prefix` and `chapter-prefix` are the supplements Quarto writes for `@sec-x`, on a section or a chapter,
+--- so the reference rule can tell them from a custom supplement.
 --- @param meta pandoc.Meta The document metadata
 --- @param config table The normalised `typst-extras` options
 --- @return table Settings with the fields of `typst-extras-config`
@@ -91,6 +91,8 @@ function M.settings(meta, config)
     ['appendix-title'] = meta_string(crossref, 'appendix-title', language['crossref-apx-prefix'] or 'Appendix'),
     ['appendix-delim'] = meta_string(crossref, 'appendix-delim', DEFAULT_APPENDIX_DELIM),
     ['number-sections'] = PANDOC_WRITER_OPTIONS ~= nil and PANDOC_WRITER_OPTIONS.number_sections == true,
+    ['section-prefix'] = meta_string(crossref, 'sec-prefix', language['crossref-sec-prefix'] or 'Section'),
+    ['chapter-prefix'] = meta_string(crossref, 'ch-prefix', language['crossref-ch-prefix'] or 'Chapter'),
   }
 end
 
@@ -112,8 +114,8 @@ end
 --- @return string[] Built-in floats, custom floats alphabetically, then callouts
 function M.kinds(meta)
   local kinds = {}
-  for _, key in ipairs(BUILTIN_FLOAT_KINDS) do
-    kinds[#kinds + 1] = 'quarto-float-' .. key
+  for _, key in ipairs(kinds_module.BUILTIN) do
+    kinds[#kinds + 1] = kinds_module.FLOAT_PREFIX .. key
   end
   local custom = {}
   for name in pairs(kinds_module.custom(meta)) do
@@ -121,7 +123,7 @@ function M.kinds(meta)
   end
   table.sort(custom)
   for _, name in ipairs(custom) do
-    kinds[#kinds + 1] = 'quarto-float-' .. name
+    kinds[#kinds + 1] = kinds_module.FLOAT_PREFIX .. name
   end
   local language = quarto.doc.language or {}
   for _, callout in ipairs(CALLOUT_TYPES) do
@@ -149,11 +151,7 @@ end
 --- @return pandoc.Pandoc
 function M.insert_resets(doc, kinds, should_reset)
   should_reset = should_reset or numbered_heading
-  local quoted = {}
-  for _, kind in ipairs(kinds) do
-    quoted[#quoted + 1] = emit.string(kind)
-  end
-  local reset = '#typst-extras-reset-chapter((' .. table.concat(quoted, ', ') .. ',))'
+  local reset = '#typst-extras-reset-chapter(' .. kinds_module.typst_array(kinds) .. ')'
   local blocks = pandoc.Blocks({})
   for _, block in ipairs(doc.blocks) do
     if block.t == 'Header' and should_reset(block) then
@@ -189,6 +187,7 @@ end
 --- @param opts table|nil `inherit_theorem_levels` (boolean): also bind `theorem-inherited-levels = 1`,
 ---   so theorion restarts theorem numbers at each level-1 heading.
 ---   `parts` (boolean): also add the reference rule for appendix and supplementary headings.
+---   `book` (boolean): also wrap the heading numbering of the book, so supplementary chapters read `S1`.
 function M.emit_numbering(settings, opts)
   opts = opts or {}
   local header = {
@@ -207,6 +206,10 @@ function M.emit_numbering(settings, opts)
   }
   if opts.parts then
     before[#before + 1] = '#show ref: typst-extras-ref'
+  end
+  if opts.book then
+    before[#before + 1] = '#show: body => context { set heading(numbering: ' ..
+      'typst-extras-book-heading-numbering(heading.numbering, config: typst-extras-config)); body }'
   end
   before[#before + 1] = ''
   emit.library()
@@ -254,7 +257,7 @@ local function special_book(doc, config)
     return doc, false
   end
   settings.chapters = false
-  M.emit_numbering(settings, { parts = true })
+  M.emit_numbering(settings, { parts = true, book = true })
   doc.blocks = blocks
   return doc, true
 end

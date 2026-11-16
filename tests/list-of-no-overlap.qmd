@@ -1,0 +1,33 @@
+---
+title: No overlap with lof
+format:
+  typst:
+    keep-typ: true
+lof: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    list-of: [tbl]
+_quarto:
+  tests:
+    typst:
+      noErrors: true
+      printsMessage:
+        level: WARN
+        regex: 'list-of'
+        negate: true
+      ensureTypstFileRegexMatches:
+        - ['typst-extras-list-of\(\(\(kind: "quarto-float-tbl"']
+        - ['typst-extras-list-of\(.*"quarto-float-fig"']
+---
+
+![A blue square.](figure.svg){#fig-square fig-alt="A blue square."}
+
+| A | B |
+|---|---|
+| 1 | 2 |
+
+: A small table. {#tbl-small}
+
+See @fig-square and @tbl-small.

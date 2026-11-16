@@ -1,0 +1,20 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: Test book with a chapter after a supplementary chapter
+  author: Mickaël Canouil
+  chapters:
+    - index.qmd
+    - chapter-1.qmd
+    - chapter-2.qmd
+    - supplementary.qmd
+    - chapter-3.qmd
+
+format:
+  typst:
+    keep-typ: true
+
+filters:
+  - typst-extras

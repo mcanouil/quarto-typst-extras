@@ -10,4 +10,11 @@ $$ {#eq-supp-two}
 A second supplementary note.
 :::
 
+::: {#thm-supp-two}
+
+## A second supplementary theorem
+
+A statement.
+:::
+
 See @fig-supp-two, @eq-supp-two and @nte-supp-two.

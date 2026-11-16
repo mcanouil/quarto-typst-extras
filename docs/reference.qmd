@@ -49,7 +49,7 @@ extensions:
 | `watermark.size` | length | `4em` | The size of the text, in `pt`, `mm`, `cm`, `in` or `em`. |
 | `watermark.colour` | colour | `gray` | The colour of the text. See [the colour values](#watermark-colour). |
 | `watermark.position` | string | `center` | Where the watermark sits. |
-| `watermark.width` | percentage or length | `50%` | The width of an image. |
+| `watermark.width` | percentage or length | `50%` | The width of an image, as a percentage or in `pt`, `mm`, `cm`, `in` or `em`. |
 | `sections.appendix-delimiter` | string | `"."` | The text between the appendix letter and the number. |
 | `sections.supplementary-prefix` | string | `"S"` | The prefix of supplementary headings and floats. |
 
@@ -63,6 +63,7 @@ The extension also reads these Quarto options:
 | `number-sections` | Number the headings. Chapter prefixes need it. |
 | `crossref.appendix-title` | The label of an appendix heading. The default is the language word for Appendix. |
 | `crossref.appendix-delim` | The text after the appendix letter in a heading. The default is `" —"`. |
+| `crossref.sec-prefix` and `crossref.ch-prefix` | The prefixes that Quarto writes in a reference to a section or a chapter. A reference to an appendix or supplementary heading with one of these prefixes shows the default label. |
 | `crossref.custom` | Custom float kinds, which `list-of` accepts as kinds. |
 | `lof` and `lot` | Quarto's own lists, which `list-of` must not repeat. |
 
@@ -100,6 +101,7 @@ extensions:
 - The kinds are `fig`, `tbl`, `lst`, and every key of `crossref.custom`.
 - With `true`, the order is figures, tables, listings, then the custom kinds in alphabetical order.
   With a list, the order is the order of the list.
+  A kind that the list names more than once gives one list, at its first position.
 - A title comes from `titles`, else from the language of the document (`crossref-lof-title`, `crossref-lot-title` and `crossref-lol-title`).
   A custom kind uses its `latex-list-of-description`, else its name.
 - The lists start the body, so in Quarto's default Typst format they come after the table of contents.
@@ -132,7 +134,9 @@ $$
 - A formula with a label (`{#eq-energy}`) is left to Quarto, which already handles `alt` on a labelled equation.
 - The text can contain double quotes, backslashes and curly quotes.
   The extension escapes them for Typst.
-- In other formats, the extension removes the span or div and keeps the formula.
+- In other formats, the extension removes the `alt` attribute and keeps the formula.
+  A span or div that has only the `alt` attribute is removed too.
+  A span or div with an identifier, a class or another attribute stays, without `alt`.
 
 ## Sections
 
@@ -171,6 +175,8 @@ More text.
 | Equation | `(A.1)` |
 | Reference to the section | `Appendix A` |
 | Reference to the sub-heading | `Appendix A.1` |
+| Reference without a prefix (`-@sec-extra`) | `A` |
+| Reference with your own prefix (`[Annex @sec-extra]`) | `Annex A` |
 
 : Appendix numbering with the default options. {.striped .hover tbl-colwidths="[40,60]"}
 
@@ -185,6 +191,7 @@ More text.
 - The extension scans top-level blocks only.
   A class on a heading inside a div or a callout does nothing, and does not warn.
 - A class on a heading that is not at level 1 stays in place, and the render warns.
+- A heading with both `.appendix` and `.supplementary` is an appendix, and the render warns.
 
 ### Supplementary sections
 
@@ -198,6 +205,7 @@ These sections move to the end, after the appendices, and use the journal style.
 | Figure or table | `Figure S1`, `Table S1` |
 | Equation | `(S1)` |
 | Reference to the section | `S1` |
+| Reference with your own prefix (`[Table @sec-raw]`) | `Table S1` |
 
 : Supplementary numbering with the default options. {.striped .hover tbl-colwidths="[40,60]"}
 
@@ -214,10 +222,10 @@ In a Typst book, the book numbers the chapters and builds the appendices.
   The class `.appendix` does nothing in a book, and the render warns.
 - Put `.supplementary` on the level-1 heading of a chapter.
   The chapter stays in place, and its headings, floats, equations, callouts and theorems read `S1`.
-- List supplementary chapters last, and keep them together.
-  Then they share one sequence: `Figure S1`, `Figure S2`.
-- A body chapter between supplementary chapters, or after them, breaks the numbering.
-  The render warns.
+- All supplementary chapters of the book share one sequence: `S1`, `S2` for the chapters, and `Figure S1`, `Figure S2` for the floats.
+  This is also true when body chapters come between them.
+- A body chapter after a supplementary chapter keeps the body numbering.
+  For example, after chapters `1`, `2` and `S1`, the next chapter is `3`.
 - The lists of floats, the alternative text and the watermark work as in a single document.
 
 ## Watermark
@@ -265,7 +273,7 @@ These problems stop the render with an error that starts with `[typst-extras]`:
 - `watermark` has an unknown key, sets both `text` and `image`, sets neither, or gives an empty `text` or `image` string.
 - `watermark` sets `opacity` with an `image`.
 - A watermark value is not valid: `opacity`, `angle`, `size`, `colour`, `position` or `width`.
-  `opacity` must be from `0%` to `100%`, and `size` must use `pt`, `mm`, `cm`, `in` or `em`.
+  `opacity` must be from `0%` to `100%`, `size` must use `pt`, `mm`, `cm`, `in` or `em`, and `width` must be a percentage or use one of these units.
 
 These problems let the render finish, with a warning:
 
@@ -275,7 +283,7 @@ These problems let the render finish, with a warning:
 - `crossref.chapters` is true and `number-sections` is not.
 - `.appendix` or `.supplementary` is on a heading that is not at level 1.
 - `.appendix` is on a chapter heading in a book.
-- A numbered chapter follows a supplementary chapter in a book.
+- A heading has both `.appendix` and `.supplementary`.
 
 ## Limitations
 
@@ -296,6 +304,5 @@ These problems let the render finish, with a warning:
   Quarto's own shift of `-1` for a document with `##` headings only works.
   A positive `shift-heading-level-by`, or a `#` heading inside a div while the top-level headings are `##`, is not supported.
 - An appendix or supplementary heading that is also `.unnumbered` cannot be referenced.
-- In a book, a body chapter between or after supplementary chapters breaks the numbering.
 - Typst counts theorems in appendix and supplementary sections with queries, so the cost grows with the number of floats.
 - The tests of the extension that read PDF text need `pdftotext`, which comes with poppler.

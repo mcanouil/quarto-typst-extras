@@ -1,0 +1,14 @@
+# First supplement {.supplementary #sec-supp-one}
+
+![A first supplementary square.](figure.svg){#fig-supp-one fig-alt="A blue square."}
+
+$$
+x = 1
+$$ {#eq-supp-one}
+
+::: {#thm-supp-one}
+
+## A first supplementary theorem
+
+A statement.
+:::

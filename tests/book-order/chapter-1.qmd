@@ -1,0 +1,3 @@
+# First chapter
+
+![A first square.](figure.svg){#fig-first fig-alt="A blue square."}

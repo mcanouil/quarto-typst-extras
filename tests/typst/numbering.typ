@@ -11,6 +11,8 @@
   appendix-title: "Appendix",
   appendix-delim: " :",
   number-sections: true,
+  section-prefix: "Section",
+  chapter-prefix: "Chapter",
 )
 #typst-extras-config-state.update(config)
 

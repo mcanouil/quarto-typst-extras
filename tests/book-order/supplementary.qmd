@@ -1,0 +1,3 @@
+# Supporting material {.supplementary}
+
+![A supplementary square.](figure.svg){#fig-supp fig-alt="A blue square."}

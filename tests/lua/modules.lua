@@ -9,6 +9,7 @@
 local root = arg[0]:gsub('tests/lua/[^/]*$', '')
 if root == '' then root = './' end
 local extension_dir = root .. '_extensions/typst-extras/'
+-- `require` gets absolute paths from `resolve_path`; the bare `?.lua` template resolves them.
 package.path = package.path .. ';?.lua'
 local failures = 0
 local logged = { error = {}, warning = {} }
@@ -23,10 +24,6 @@ quarto = {
   log = {
     error = function(message) logged.error[#logged.error + 1] = message end,
     warning = function(message) logged.warning[#logged.warning + 1] = message end,
-  },
-  json = pandoc.json,
-  base64 = {
-    decode = function(text) return text end,
   },
   doc = {
     include_file = function(location, path)
@@ -149,6 +146,8 @@ check('watermark bad opacity fails', fails_with({ watermark = { text = 'a', opac
 check('watermark bad angle fails', fails_with({ watermark = { text = 'a', angle = '45' } }, 'unsupported angle 45'), true)
 check('watermark bad size fails', fails_with({ watermark = { text = 'a', size = 'big' } }, 'unsupported size big'), true)
 check('watermark bad colour fails', fails_with({ watermark = { text = 'a', colour = 'rgb(1)' } }, 'unsupported colour rgb(1)'), true)
+check('watermark hostile colour fails with the module prefix', fails_with({ watermark = { text = 'a',
+  colour = 'red); #panic("x"' } }, '[typst-extras] watermark: unsupported colour red); #panic("x". Use'), true)
 check('watermark unknown key fails', fails_with({ watermark = { text = 'a', colr = 'red' } }, 'unknown key colr'), true)
 check('watermark size with an unknown unit fails', fails_with({ watermark = { text = 'a', size = '4xx' } }, 'unsupported size 4xx'), true)
 check('watermark size in pt', (header_after({ watermark = { text = 'a', size = '48pt' } })),
@@ -157,6 +156,12 @@ check('watermark opacity above 100% fails', fails_with({ watermark = { text = 'a
   'unsupported opacity 150%. Use a percentage from 0% to 100%.'), true)
 check('watermark opacity below 0% fails', fails_with({ watermark = { text = 'a', opacity = '-5%' } },
   'unsupported opacity -5%'), true)
+check('watermark width with an unknown unit fails', fails_with({ watermark = { image = 'a.svg', width = '8xx' } },
+  'unsupported width 8xx'), true)
+check('watermark width with a one-letter unit fails', fails_with({ watermark = { image = 'a.svg', width = '8x' } },
+  'unsupported width 8x'), true)
+check('watermark width as a percentage', (header_after({ watermark = { image = 'a.svg', width = '40%' } })),
+  '#set page(foreground: typst-extras-watermark(image: "a.svg", width: 40%))\n')
 check('watermark opacity of 100% passes', (header_after({ watermark = { text = 'a', opacity = '100%' } })),
   '#set page(foreground: typst-extras-watermark(text: "a", opacity: 100%))\n')
 
@@ -172,6 +177,26 @@ check('list-of unknown map key fails', list_fails_with(pandoc.MetaMap({
   kind = pandoc.MetaList({ pandoc.MetaInlines({ pandoc.Str('tbl') }) }),
 }), 'list-of: unknown key kind. Known keys: kinds, titles, page-break.'), true)
 check('list-of empty list fails', list_fails_with(pandoc.MetaList({}), 'list-of: empty list of kinds.'), true)
+
+local function list_of_body(value)
+  local config = options.read(pandoc.Meta({ extensions = pandoc.MetaMap({
+    ['typst-extras'] = pandoc.MetaMap({ ['list-of'] = value }),
+  }) }))
+  list_of.apply(pandoc.Pandoc({}), config)
+  return included[#included].text
+end
+local function kinds_list(...)
+  local items = {}
+  for _, kind in ipairs({ ... }) do
+    items[#items + 1] = pandoc.MetaInlines({ pandoc.Str(kind) })
+  end
+  return pandoc.MetaList(items)
+end
+check('list-of lists a duplicate kind once, at its first position', list_of_body(kinds_list('tbl', 'fig', 'tbl')),
+  '#typst-extras-list-of(((kind: "quarto-float-tbl", title: "tbl"), (kind: "quarto-float-fig", title: "fig"),))\n')
+check('list-of lists a duplicate kind once in the map form', list_of_body(pandoc.MetaMap({
+  kinds = kinds_list('fig', 'fig'),
+})), '#typst-extras-list-of(((kind: "quarto-float-fig", title: "fig"),))\n')
 
 local sections = dofile(extension_dir .. '_modules/sections.lua')
 local parts_module = require(quarto.utils.resolve_path('_modules/parts.lua'):gsub('%.lua$', ''))
@@ -212,23 +237,27 @@ check('sections default supplementary-prefix', defaults['supplementary-prefix'],
 check('sections default appendix-title from language', defaults['appendix-title'], 'Annexe')
 check('sections default appendix-delim', defaults['appendix-delim'], ' \u{2014}')
 check('sections number-sections from writer options', defaults['number-sections'], true)
+check('sections default section-prefix', defaults['section-prefix'], 'Section')
+check('sections default chapter-prefix', defaults['chapter-prefix'], 'Chapter')
 
 local custom = sections.settings(pandoc.Meta({
   crossref = pandoc.MetaMap({
     chapters = pandoc.MetaBool(true),
     ['appendix-title'] = pandoc.MetaInlines({ pandoc.Str('Annex') }),
     ['appendix-delim'] = pandoc.MetaInlines({ pandoc.Str(':') }),
+    ['sec-prefix'] = pandoc.MetaInlines({ pandoc.Str('Part') }),
   }),
 }), { sections = { ['appendix-delimiter'] = '', ['supplementary-prefix'] = 'SM' } })
 check('sections chapters from crossref', custom.chapters, true)
 check('sections appendix-title from crossref', custom['appendix-title'], 'Annex')
 check('sections appendix-delim from crossref', custom['appendix-delim'], ':')
+check('sections section-prefix from crossref', custom['section-prefix'], 'Part')
 check('sections appendix-delimiter option', custom['appendix-delimiter'], '')
 check('sections supplementary-prefix option', custom['supplementary-prefix'], 'SM')
 
 check('sections config literal', sections.config_literal(defaults),
   '(chapters: false, appendix-delimiter: ".", supplementary-prefix: "S", appendix-title: "Annexe", ' ..
-  'appendix-delim: " \u{2014}", number-sections: true)')
+  'appendix-delim: " \u{2014}", number-sections: true, section-prefix: "Section", chapter-prefix: "Chapter")')
 
 local kinds = sections.kinds(pandoc.Meta({
   crossref = pandoc.MetaMap({ custom = pandoc.MetaList({
@@ -356,27 +385,29 @@ warned = #logged.warning
 local moved = sections.special(parts_doc(apx_meta), {})
 check('sections special moves appendix then supplementary sections', outline_of(moved),
   'h1:Intro | h1:Methods | Inside | ' ..
-  'raw:typst-extras-part-start | raw:set | raw:typst-extras-reset-chapter | h1:Extra | x | h2:Deep | ' ..
+  'raw:typst-extras-part-start | raw:set | h1:Extra | x | h2:Deep | ' ..
   'raw:typst-extras-reset-chapter | h1:More | m | ' ..
   'raw:typst-extras-part-start | raw:set | h1:Supp | s')
 check('sections special warns about a deeper heading', #logged.warning, warned + 1)
 check('sections special warning names level-1 and the heading',
   logged.warning[#logged.warning]:find('sections: .*level%-1.*Deep') ~= nil, true)
-check('sections special removes the class from a moved heading', moved.blocks[7].classes:includes('appendix'), false)
-check('sections special keeps the class on a deeper heading', moved.blocks[9].classes:includes('appendix'), true)
+check('sections special removes the class from a moved heading', moved.blocks[6].classes:includes('appendix'), false)
+check('sections special keeps the class on a deeper heading', moved.blocks[8].classes:includes('appendix'), true)
 check('sections special appendix start', moved.blocks[4].text,
   '#typst-extras-part-start("appendix", (' .. '"quarto-float-fig", "quarto-float-tbl", "quarto-float-lst", ' ..
   '"quarto-callout-Note", "quarto-callout-Astuce", "quarto-callout-Warning", "quarto-callout-Important", ' ..
   '"quarto-callout-Caution",))')
 check('sections special appendix heading numbering', moved.blocks[5].text,
   '#set heading(numbering: typst-extras-appendix-numbering.with(config: typst-extras-config))')
-check('sections special supplementary heading numbering', moved.blocks[14].text,
+check('sections special supplementary heading numbering', moved.blocks[13].text,
   '#set heading(numbering: typst-extras-heading-numbering.with(part: "supplementary", config: typst-extras-config))')
 check('sections special emits the numbering once', #included - before, 2)
 local special_header = included[#included - 1].text
 check('sections special keeps the body flat', special_header:find('(chapters: false,', 1, true) ~= nil, true)
 check('sections special keeps theorem levels', special_header:find('theorem-inherited-levels', 1, true), nil)
 check('sections special adds the reference rule', included[#included].text:find('#show ref: typst-extras-ref', 1, true) ~= nil, true)
+check('sections special in a document keeps the heading numbering of the parts',
+  included[#included].text:find('typst-extras-book-heading-numbering', 1, true), nil)
 
 before = #included
 local shifted = sections.special(pandoc.Pandoc({
@@ -386,8 +417,7 @@ local shifted = sections.special(pandoc.Pandoc({
   pandoc.Header(2, 'Methods'),
 }, pandoc.Meta({})), {})
 check('sections special uses the top heading level of the document', outline_of(shifted),
-  'h2:Intro | h2:Methods | raw:typst-extras-part-start | raw:set | raw:typst-extras-reset-chapter | ' ..
-  'h2:Extra | h3:Detail')
+  'h2:Intro | h2:Methods | raw:typst-extras-part-start | raw:set | h2:Extra | h3:Detail')
 
 before = #included
 local untouched = sections.special(section_doc(pandoc.Meta({})), {})
@@ -399,22 +429,26 @@ before = #included
 warned = #logged.warning
 local in_book = sections.special(parts_doc(book_meta), {})
 check('sections special marks a supplementary chapter in a book and moves nothing', outline_of(in_book),
-  'h1:Intro | h1:Extra | x | h2:Deep | raw:typst-extras-part-start | raw:set | h1:Supp | s | ' ..
-  'raw:typst-extras-part | h1:Methods | Inside | h1:More | m')
-check('sections special in a book goes back to the body', in_book.blocks[9].text, '#typst-extras-part.update("body")')
+  'h1:Intro | h1:Extra | x | h2:Deep | raw:typst-extras-body-mark | raw:typst-extras-part-start | ' ..
+  'h1:Supp | s | raw:typst-extras-carry-mark | raw:typst-extras-body-restore | h1:Methods | Inside | h1:More | m')
+check('sections special in a book marks the body before the part start', in_book.blocks[5].text,
+  '#typst-extras-body-mark()')
+check('sections special in a book marks the supplementary counters when it leaves the part', in_book.blocks[9].text,
+  '#typst-extras-carry-mark()')
+check('sections special in a book goes back to the body and restores the heading counter', in_book.blocks[10].text,
+  '#typst-extras-body-restore()')
 check('sections special in a book removes the supplementary class', in_book.blocks[7].classes:includes('supplementary'), false)
 check('sections special in a book keeps the appendix class', in_book.blocks[2].classes:includes('appendix'), true)
-check('sections special in a book warns about appendix classes, a deeper heading and a later chapter',
-  #logged.warning, warned + 4)
+check('sections special in a book warns about appendix classes and a deeper heading',
+  #logged.warning, warned + 3)
 check('sections special in a book points to appendices',
   logged.warning[warned + 1]:find('sections: .*"Extra".*use the book\'s appendices: list') ~= nil, true)
 check('sections special in a book points a deeper heading to appendices',
   logged.warning[warned + 2]:find('sections: .*"Deep".*use the book\'s appendices: list') ~= nil, true)
 check('sections special in a book does not ask for a level-1 heading',
   logged.warning[warned + 2]:find('Move the class to a level-1 heading', 1, true), nil)
-check('sections special in a book warns about a chapter after a supplementary chapter',
-  logged.warning[warned + 3]:find('sections: the chapter "Methods" comes after a supplementary chapter', 1, true) ~= nil,
-  true)
+check('sections special in a book warns about the appendix class of a later chapter',
+  logged.warning[warned + 3]:find('"More"', 1, true) ~= nil, true)
 check('sections special in a book emits the numbering once', #included - before, 2)
 check('sections special in a book keeps the body flat',
   included[#included - 1].text:find('(chapters: false,', 1, true) ~= nil, true)
@@ -422,6 +456,9 @@ check('sections special in a book keeps the book theorem levels',
   included[#included - 1].text:find('theorem-inherited-levels', 1, true), nil)
 check('sections special in a book adds the reference rule',
   included[#included].text:find('#show ref: typst-extras-ref', 1, true) ~= nil, true)
+check('sections special in a book wraps the heading numbering of the book',
+  included[#included].text:find('set heading(numbering: typst-extras-book-heading-numbering(heading.numbering, ' ..
+    'config: typst-extras-config))', 1, true) ~= nil, true)
 
 local appendices_marker = '<!-- quarto-file-metadata: {"bookItemType":"appendix"} -->'
 before = #included
@@ -437,8 +474,10 @@ local supplementary_last = sections.special(pandoc.Pandoc({
   pandoc.Header(1, 'Appendix'),
 }, book_meta), {})
 check('sections special in a book starts a run of supplementary chapters once', outline_of(supplementary_last),
-  'h1:Intro | raw:typst-extras-part-start | raw:set | h1:Supp | raw:typst-extras-carry-mark | h1:Supp two | ' ..
-  'raw:typst-extras-carry-restore | raw:typst-extras-part | Appendices | h1:Appendix')
+  'h1:Intro | raw:typst-extras-body-mark | raw:typst-extras-part-start | h1:Supp | ' ..
+  'raw:typst-extras-carry-mark | h1:Supp two | raw:typst-extras-carry-restore | raw:typst-extras-carry-mark | ' ..
+  'raw:typst-extras-body-restore | ' ..
+  'Appendices | h1:Appendix')
 check('sections special in a book marks the counters before a later supplementary chapter',
   supplementary_last.blocks[5].text, '#typst-extras-carry-mark()')
 check('sections special in a book carries the counters over a later supplementary chapter',
@@ -447,10 +486,43 @@ check('sections special in a book carries the counters over a later supplementar
   '"quarto-callout-Important", "quarto-callout-Caution",))')
 check('sections special in a book does not warn before the appendices', #logged.warning, warned)
 
+warned = #logged.warning
+local two_runs = sections.special(pandoc.Pandoc({
+  pandoc.Header(1, 'Intro'),
+  classed(1, 'Supp', 'supplementary'),
+  pandoc.Header(1, 'Body'),
+  classed(1, 'Late', 'supplementary'),
+}, book_meta), {})
+check('sections special in a book resumes the supplementary part in a second run', outline_of(two_runs),
+  'h1:Intro | raw:typst-extras-body-mark | raw:typst-extras-part-start | h1:Supp | raw:typst-extras-carry-mark | ' ..
+  'raw:typst-extras-body-restore | h1:Body | raw:typst-extras-body-mark | raw:typst-extras-part-resume | h1:Late | ' ..
+  'raw:typst-extras-carry-restore')
+check('sections special in a book resumes the supplementary part by name', two_runs.blocks[9].text,
+  '#typst-extras-part-resume("supplementary")')
+check('sections special in a book does not warn about a second run of supplementary chapters', #logged.warning, warned)
+
 before = #included
 local plain_book = sections.special(section_doc(book_meta), {})
 check('sections special in a book without supplementary chapters adds nothing', #included - before, 0)
 check('sections special in a book without supplementary chapters keeps blocks', #plain_book.blocks, 4)
+
+local function both_classes(level)
+  return pandoc.Header(level, 'Both', pandoc.Attr('', { 'appendix', 'supplementary' }))
+end
+warned = #logged.warning
+local both = sections.special(pandoc.Pandoc({ pandoc.Header(1, 'Intro'), both_classes(1) }, pandoc.Meta({})), {})
+check('sections special takes appendix for a heading with both classes', outline_of(both),
+  'h1:Intro | raw:typst-extras-part-start | raw:set | h1:Both')
+check('sections special warns once about a heading with both classes', #logged.warning, warned + 1)
+check('sections special names both classes',
+  logged.warning[#logged.warning]:find('sections: the heading "Both" has both the .appendix and .supplementary ' ..
+    'classes, so it is an appendix. Remove one of them.', 1, true) ~= nil, true)
+warned = #logged.warning
+sections.special(pandoc.Pandoc({ pandoc.Header(1, 'Intro'), both_classes(1) }, book_meta), {})
+check('sections special in a book names both classes',
+  logged.warning[warned + 1] ~= nil and
+  logged.warning[warned + 1]:find('the heading "Both" has both the .appendix and .supplementary', 1, true) ~= nil,
+  true)
 
 local start = parts_module.start_blocks('supplementary', { 'quarto-float-fig' })
 check('parts start_blocks starts the part', start[1].text, '#typst-extras-part-start("supplementary", ("quarto-float-fig",))')
@@ -478,7 +550,7 @@ local combined = sections.apply(pandoc.Pandoc({
 }, chapters_meta()), {})
 check('sections apply with chapters and parts', outline_of(combined),
   'raw:typst-extras-reset-chapter | h1:Intro | raw:typst-extras-reset-chapter | h1:Methods | ' ..
-  'raw:typst-extras-part-start | raw:set | raw:typst-extras-reset-chapter | h1:Extra | ' ..
+  'raw:typst-extras-part-start | raw:set | h1:Extra | ' ..
   'raw:typst-extras-part-start | raw:set | h1:Supp')
 check('sections apply emits the numbering once with chapters and parts', #included - before, 2)
 check('sections apply with chapters and parts numbers the body by chapter',

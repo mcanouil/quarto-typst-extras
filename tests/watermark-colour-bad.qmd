@@ -1,0 +1,25 @@
+---
+title: Watermark colour that injects Typst
+format:
+  typst:
+    keep-typ: true
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermark:
+      text: DRAFT
+      colour: 'red); #panic("x"'
+_quarto:
+  tests:
+    run:
+      extension-test:
+        errors: strict
+    typst:
+      shouldError: true
+      printsMessage:
+        level: ERROR
+        regex: '\[typst-extras\] watermark: unsupported colour'
+---
+
+Some text.

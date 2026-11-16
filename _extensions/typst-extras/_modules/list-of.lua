@@ -17,16 +17,13 @@ local M = {}
 --- Name used in messages.
 local MODULE_NAME = 'list-of'
 
---- Prefix of the Typst figure kind of every Quarto float.
-local KIND_PREFIX = 'quarto-float-'
+--- Language key of the title of each built-in kind.
+--- @type table<string, string>
+local TITLE_KEYS = { fig = 'crossref-lof-title', tbl = 'crossref-lot-title', lst = 'crossref-lol-title' }
 
---- Built-in kinds, in default order, with the language key of their title.
---- @type table[]
-local BUILTIN_KINDS = {
-  { key = 'fig', title_key = 'crossref-lof-title', quarto_option = 'lof' },
-  { key = 'tbl', title_key = 'crossref-lot-title', quarto_option = 'lot' },
-  { key = 'lst', title_key = 'crossref-lol-title' },
-}
+--- Quarto option that also lists a built-in kind.
+--- @type table<string, string>
+local QUARTO_OPTIONS = { fig = 'lof', tbl = 'lot' }
 
 --- Keys accepted in the map form, in the order shown in messages.
 local MAP_KEYS = { 'kinds', 'titles', 'page-break' }
@@ -49,9 +46,9 @@ local function known_kinds(meta)
   local known = {}
   local order = {}
   local language = quarto.doc.language or {}
-  for _, builtin in ipairs(BUILTIN_KINDS) do
-    known[builtin.key] = language[builtin.title_key] or builtin.key
-    order[#order + 1] = builtin.key
+  for _, key in ipairs(kinds_module.BUILTIN) do
+    known[key] = language[TITLE_KEYS[key]] or key
+    order[#order + 1] = key
   end
   local custom = kinds_module.custom(meta)
   local names = {}
@@ -114,20 +111,17 @@ end
 --- @param meta pandoc.Meta The document metadata
 --- @param kinds string[] The selected kind names
 local function warn_overlap(meta, kinds)
-  for _, builtin in ipairs(BUILTIN_KINDS) do
-    local quarto_option = builtin.quarto_option
+  for _, kind in ipairs(kinds) do
+    local quarto_option = QUARTO_OPTIONS[kind]
     if quarto_option and meta[quarto_option] == true then
-      for _, kind in ipairs(kinds) do
-        if kind == builtin.key then
-          options.warn(MODULE_NAME, 'the kind ' .. kind .. ' is also listed by ' .. quarto_option ..
-            ', so the list appears twice. Remove one of them.')
-        end
-      end
+      options.warn(MODULE_NAME, 'the kind ' .. kind .. ' is also listed by ' .. quarto_option ..
+        ', so the list appears twice. Remove one of them.')
     end
   end
 end
 
 --- Add the lists of floats to the document.
+--- A kind listed more than once gives one list, at its first position.
 --- @param doc pandoc.Pandoc The document
 --- @param config table The normalised `typst-extras` options
 --- @return pandoc.Pandoc
@@ -142,15 +136,21 @@ function M.apply(doc, config)
     selected = order
   end
   local entries = {}
+  local listed = {}
+  local seen = {}
   for _, kind in ipairs(selected) do
     if type(kind) ~= 'string' or known[kind] == nil then
       options.fail(MODULE_NAME, 'unknown kind ' .. describe(kind) .. '. Known kinds: ' ..
         table.concat(order, ', ') .. '.')
     end
-    entries[#entries + 1] = '(kind: ' .. emit.string(KIND_PREFIX .. kind) ..
-      ', title: ' .. emit.string(titles[kind] or known[kind]) .. ')'
+    if not seen[kind] then
+      seen[kind] = true
+      listed[#listed + 1] = kind
+      entries[#entries + 1] = '(kind: ' .. emit.string(kinds_module.FLOAT_PREFIX .. kind) ..
+        ', title: ' .. emit.string(titles[kind] or known[kind]) .. ')'
+    end
   end
-  warn_overlap(doc.meta, selected)
+  warn_overlap(doc.meta, listed)
   emit.library()
   emit.before_body('#typst-extras-list-of((' .. table.concat(entries, ', ') .. ',)' ..
     (page_break and ', page-break: true' or '') .. ')\n')

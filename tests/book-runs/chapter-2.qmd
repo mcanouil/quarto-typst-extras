@@ -1,0 +1,14 @@
+# Second chapter
+
+![A second square.](figure.svg){#fig-second fig-alt="A blue square."}
+
+$$
+y = 2
+$$ {#eq-second}
+
+::: {#thm-body}
+
+## A body theorem
+
+A statement.
+:::

@@ -13,6 +13,7 @@
 
 local options = require(quarto.utils.resolve_path('_modules/options.lua'):gsub('%.lua$', ''))
 local emit = require(quarto.utils.resolve_path('_modules/emit.lua'):gsub('%.lua$', ''))
+local kinds_module = require(quarto.utils.resolve_path('_modules/kinds.lua'):gsub('%.lua$', ''))
 
 local M = {}
 
@@ -21,9 +22,6 @@ local MODULE_NAME = 'sections'
 
 --- Parts, in the order they go at the end of the document. Each part is also the class that marks it.
 local PARTS = { 'appendix', 'supplementary' }
-
---- Book item marker that Quarto puts at the start of each book file, with base64 JSON.
-local BOOK_MARKER_PATTERN = '^<!%-%- quarto%-file%-metadata: ([^ ]+) %-%->$'
 
 --- Heading numbering of each part.
 local HEADING_NUMBERING = {
@@ -43,6 +41,18 @@ local function part_of(header)
   return nil
 end
 
+--- Return the part a top-level heading starts, and warn when it has both part classes.
+--- The `.appendix` class wins, as in `part_of`.
+--- @param header pandoc.Header
+--- @return string|nil
+local function top_part_of(header)
+  if header.classes:includes('appendix') and header.classes:includes('supplementary') then
+    options.warn(MODULE_NAME, 'the heading "' .. pandoc.utils.stringify(header) .. '" has both the .appendix and ' ..
+      '.supplementary classes, so it is an appendix. Remove one of them.')
+  end
+  return part_of(header)
+end
+
 --- Return the top heading level of the document: the smallest level of its top-level headings.
 --- Pandoc applies `shift-heading-level-by` after the filters, so the filter cannot see the level Typst gets.
 --- The top level stands for Typst level 1: `#` without a shift, `##` with `shift-heading-level-by: -1`.
@@ -58,24 +68,22 @@ local function top_level(blocks)
   return level
 end
 
---- Write a Typst array of strings.
---- @param kinds string[]
---- @return string
-local function typst_array(kinds)
-  local quoted = {}
-  for _, kind in ipairs(kinds) do
-    quoted[#quoted + 1] = emit.string(kind)
-  end
-  return '(' .. table.concat(quoted, ', ') .. ',)'
+--- Return the raw Typst block that starts a part.
+--- @param part string `"appendix"` or `"supplementary"`
+--- @param kinds string[] Figure kinds to reset, from `sections.kinds`
+--- @return pandoc.Block
+function M.part_start(part, kinds)
+  return pandoc.RawBlock('typst',
+    '#typst-extras-part-start(' .. emit.string(part) .. ', ' .. kinds_module.typst_array(kinds) .. ')')
 end
 
---- Return the raw Typst blocks that start a part: the part start, then the heading numbering of the part.
+--- Return the raw Typst blocks that start a part in a document: the part start, then the heading numbering of the part.
 --- @param part string `"appendix"` or `"supplementary"`
 --- @param kinds string[] Figure kinds to reset, from `sections.kinds`
 --- @return pandoc.Block[]
 function M.start_blocks(part, kinds)
   return {
-    pandoc.RawBlock('typst', '#typst-extras-part-start(' .. emit.string(part) .. ', ' .. typst_array(kinds) .. ')'),
+    M.part_start(part, kinds),
     pandoc.RawBlock('typst', '#set heading(numbering: ' .. HEADING_NUMBERING[part] .. ')'),
   }
 end
@@ -107,7 +115,7 @@ local function split(blocks, top)
   local target = body
   for _, block in ipairs(blocks) do
     if block.t == 'Header' and block.level == top then
-      local part = part_of(block)
+      local part = top_part_of(block)
       if part then
         block.classes = block.classes:filter(function(class) return class ~= part end)
         target = pandoc.Blocks({})
@@ -136,6 +144,8 @@ local function unnumber_sub_headings(section, top)
 end
 
 --- Move the appendix and supplementary sections of a document to its end.
+--- Each appendix section after the first starts with a counter reset.
+--- The first one needs none, because the part start resets the counters.
 --- @param blocks pandoc.Blocks The top-level blocks
 --- @param settings table Settings from `sections.settings`
 --- @param kinds string[] Figure kinds to reset, from `sections.kinds`
@@ -147,18 +157,18 @@ function M.move(blocks, settings, kinds)
     return blocks, nil
   end
   local body, sections = split(blocks, top)
-  local kinds_array = typst_array(kinds)
+  local kinds_array = kinds_module.typst_array(kinds)
   local reset = '#typst-extras-reset-chapter(' .. kinds_array .. ')'
   local tail = pandoc.Blocks({})
   for _, part in ipairs(PARTS) do
     if #sections[part] > 0 then
       tail:extend(M.start_blocks(part, kinds))
     end
-    for _, section in ipairs(sections[part]) do
+    for index, section in ipairs(sections[part]) do
       if not settings['number-sections'] then
         unnumber_sub_headings(section, top)
       end
-      if part == 'appendix' then
+      if part == 'appendix' and index > 1 then
         tail:insert(pandoc.RawBlock('typst', reset))
       end
       tail:extend(section)
@@ -170,26 +180,11 @@ function M.move(blocks, settings, kinds)
   return body, tail
 end
 
---- Tell whether a block is the divider that Quarto puts before a part of a book, and whether it starts the appendices.
---- The book item marker in the divider gives its type.
+--- Tell whether a block is the divider that Quarto puts before a part of a book, such as the appendices.
 --- @param block pandoc.Block
---- @return boolean divider
---- @return boolean appendices
+--- @return boolean
 local function book_divider(block)
-  if block.t ~= 'Div' or not block.classes:includes('quarto-book-part') then
-    return false, false
-  end
-  local appendices = false
-  block:walk({
-    RawBlock = function(raw)
-      local encoded = raw.format == 'html' and raw.text:match(BOOK_MARKER_PATTERN)
-      if encoded then
-        local item = quarto.json.decode(quarto.base64.decode(encoded))
-        appendices = appendices or item.bookItemType == 'appendix'
-      end
-    end,
-  })
-  return true, appendices
+  return block.t == 'Div' and block.classes:includes('quarto-book-part')
 end
 
 --- Mark the supplementary chapters of a book, without moving anything.
@@ -197,9 +192,29 @@ end
 --- A run of supplementary chapters starts the supplementary part once, so their headings read `S1`, `S2`.
 --- The book resets float and equation counters at each chapter, so each later chapter of the run
 --- carries them over its heading, and the run keeps one `S1`, `S2` sequence.
---- The part goes back to the body at the next chapter that is not supplementary, or at a book part divider.
---- A numbered chapter after a supplementary chapter, outside the appendices, warns,
---- because its number continues from the supplementary numbering.
+--- A body mark goes before the part start, which sets the heading counter to 0.
+--- The heading numbering comes from `typst-extras-book-heading-numbering`, set once by the caller,
+--- so the book keeps its own heading numbering outside the supplementary part.
+--- The part goes back to the body at the next chapter that is not supplementary, or at a book part divider,
+--- and the heading counter is restored from the body mark, so the next body chapter keeps the body numbering.
+--- When it goes back to the body, a carry mark keeps the supplementary counters.
+--- A later run of supplementary chapters resumes from that mark, with the heading counter,
+--- then restores the float and equation counters after its heading,
+--- so every supplementary chapter of the book shares one `S1`, `S2` sequence.
+---
+--- Example: a book with the chapters `Intro`, `Data {.supplementary}`, `More {.supplementary}` and `End`
+--- gives these top-level blocks, where `(heading)` stands for the chapter heading:
+---
+---     (Intro)
+---     #typst-extras-body-mark()                  -- keeps the heading counter of the body: (1,)
+---     #typst-extras-part-start("supplementary", ..)
+---     (Data)                                     -- reads S1
+---     #typst-extras-carry-mark()                 -- keeps the float and equation counters of S1
+---     (More)                                     -- reads S2; the book resets the float counters here
+---     #typst-extras-carry-restore(..)            -- so they are restored from the carry mark
+---     #typst-extras-carry-mark()                 -- keeps the counters of the run, for a later run
+---     #typst-extras-body-restore()               -- back to the body, heading counter (1,)
+---     (End)                                      -- reads 2
 --- @param blocks pandoc.Blocks The top-level blocks of the book
 --- @param kinds string[] Figure kinds to reset, from `sections.kinds`
 --- @return pandoc.Blocks blocks The blocks, with the part changes inserted
@@ -209,26 +224,30 @@ function M.mark_book(blocks, kinds)
   local result = pandoc.Blocks({})
   local marked = false
   local in_supplementary = false
-  local after_supplementary = false
   local function leave_supplementary()
     if in_supplementary then
-      result:insert(pandoc.RawBlock('typst', '#typst-extras-part.update("body")'))
+      result:insert(pandoc.RawBlock('typst', '#typst-extras-carry-mark()'))
+      result:insert(pandoc.RawBlock('typst', '#typst-extras-body-restore()'))
       in_supplementary = false
-      after_supplementary = true
     end
   end
-  local carry = pandoc.RawBlock('typst', '#typst-extras-carry-restore(' .. typst_array(kinds) .. ')')
+  local carry = pandoc.RawBlock('typst', '#typst-extras-carry-restore(' .. kinds_module.typst_array(kinds) .. ')')
   for _, block in ipairs(blocks) do
-    local divider, appendices = book_divider(block)
+    local divider = book_divider(block)
     local follow = nil
     if block.t == 'Header' and block.level == top then
-      local part = part_of(block)
+      local part = top_part_of(block)
       if part == 'supplementary' then
         if in_supplementary then
           result:insert(pandoc.RawBlock('typst', '#typst-extras-carry-mark()'))
           follow = carry
+        elseif marked then
+          result:insert(pandoc.RawBlock('typst', '#typst-extras-body-mark()'))
+          result:insert(pandoc.RawBlock('typst', '#typst-extras-part-resume("supplementary")'))
+          follow = carry
         else
-          result:extend(M.start_blocks(part, kinds))
+          result:insert(pandoc.RawBlock('typst', '#typst-extras-body-mark()'))
+          result:insert(M.part_start(part, kinds))
         end
         block.classes = block.classes:filter(function(class) return class ~= part end)
         in_supplementary = true
@@ -239,18 +258,9 @@ function M.mark_book(blocks, kinds)
             pandoc.utils.stringify(block) .. '" stays a chapter: use the book\'s appendices: list.')
         end
         leave_supplementary()
-        if after_supplementary and not block.classes:includes('unnumbered') then
-          options.warn(MODULE_NAME, 'the chapter "' .. pandoc.utils.stringify(block) .. '" comes after a ' ..
-            'supplementary chapter, so its number continues the supplementary numbering. ' ..
-            'List supplementary chapters last, before the appendices.')
-          after_supplementary = false
-        end
       end
     elseif divider then
       leave_supplementary()
-      if appendices then
-        after_supplementary = false
-      end
     elseif block.t == 'Header' and part_of(block) then
       warn_deep(block, DEEP_BOOK_ADVICE)
     end

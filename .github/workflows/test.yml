@@ -24,6 +24,26 @@ jobs:
     if: ${{ github.event.pull_request.draft != true }}
     uses: mcanouil/quarto-extension-test/.github/workflows/extension-test.yml@main
     with:
-      quarto-channels: '["release"]'
+      quarto-channels: '["release", "pre-release"]'
       # The `check` commands of the test documents read the PDF with pdftotext.
       apt-packages: "poppler-utils"
+
+  typst-library:
+    # The Typst library tests compile tests/typst/*.typ with Quarto's Typst,
+    # then run the Lua module tests.
+    if: ${{ github.event.pull_request.draft != true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        quarto: [release, pre-release]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: ${{ matrix.quarto }}
+
+      - name: Run the Typst library and Lua module tests
+        run: tests/typst/run.sh

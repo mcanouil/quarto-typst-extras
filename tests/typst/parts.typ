@@ -13,6 +13,8 @@
   appendix-title: "Appendix",
   appendix-delim: " :",
   number-sections: true,
+  section-prefix: "Section",
+  chapter-prefix: "Chapter",
 )
 #typst-extras-config-state.update(config)
 #let kinds = ("quarto-float-fig", "theorem")
@@ -28,8 +30,8 @@
 }
 
 /// Assert the label a reference to a heading renders, or `none` when the reference stays as it is.
-#let ref-reads(target, expected) = context {
-  assert.eq(typst-extras-heading-label(query(target).first()), expected)
+#let ref-reads(target, expected, supplement: auto) = context {
+  assert.eq(typst-extras-heading-label(query(target).first(), supplement: supplement), expected)
 }
 
 /// Assert the number the last heading displays.
@@ -41,6 +43,7 @@
 #let fig(body) = figure(body, kind: "quarto-float-fig", supplement: [Figure], caption: body)
 #let theorem-numbering = typst-extras-wrap-theorem(loc => "1.1", "1")
 #let thm(body) = figure(body, kind: "theorem", supplement: [Theorem], numbering: "1")
+#let thm-unnumbered(body) = figure(body, kind: "theorem", supplement: [Theorem], numbering: none)
 
 /// Assert the number the theorem wrap gives the last theorem, at the location of that theorem.
 #let theorem-reads(expected) = context {
@@ -82,7 +85,6 @@
 #context assert.eq(typst-extras-part.get(), "appendix")
 #context assert.eq(counter(heading).get(), (0,), message: "the part starts the heading counter again")
 #set heading(numbering: typst-extras-appendix-numbering.with(config: config))
-#typst-extras-reset-chapter(kinds)
 = Extra <extra>
 #heading-reads("Appendix A :")
 #fig[c]
@@ -100,9 +102,18 @@
 #figure-reads("B.1")
 #thm[w]
 #theorem-reads("B.1")
+#thm-unnumbered[w2]
+#thm[w3]
+#theorem-reads("B.2")
 #ref-reads(<extra>, "Appendix A")
 #ref-reads(<detail>, "Appendix A.1")
 #ref-reads(<more>, "Appendix B")
+#ref-reads(<extra>, "Appendix A", supplement: [Section])
+#ref-reads(<extra>, "Appendix A", supplement: [Chapter])
+#ref-reads(<extra>, "A", supplement: [])
+#ref-reads(<detail>, "A.1", supplement: [])
+#ref-reads(<detail>, "Annex A.1", supplement: [Annex])
+#ref-reads(<extra>, "Supporting annex A", supplement: [Supporting annex])
 
 // The bibliography title in an appendix stays unnumbered, and does not step the heading counter.
 #bibliography("/tests/appendix.bib", full: true)
@@ -130,6 +141,10 @@
 #heading-reads("S2")
 #ref-reads(<supp>, "S1")
 #ref-reads(<supp-sub>, "S1.1")
+#ref-reads(<supp>, "S1", supplement: [])
+#ref-reads(<supp>, "S1", supplement: [Section])
+#ref-reads(<supp>, "S1", supplement: [Chapter])
+#ref-reads(<supp>, "Table S1", supplement: [Table])
 #ref-reads(<body>, none)
 
 // The reference rule renders the label as a link.

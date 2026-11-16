@@ -1,0 +1,18 @@
+---
+_quarto:
+  tests:
+    typst:
+      noErrors: true
+    run:
+      extension-test:
+        check: |-
+          text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
+          for expected in 'S1 First supplement' 'Figure S1: A first supplementary square.' '(S1)' 'Theorem S1 (A first supplementary theorem)' 'Figure 2.1: A second square.' 'Theorem 2.1 (A body theorem)' 'S2 Second supplement' 'Figure S2: A second supplementary square.' '(S2)' 'Theorem S2 (A second supplementary theorem)' 'See S1, S2, Figure S2 and Theorem S2.'; do
+            printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
+          done
+          pdftotext "$EXTENSION_TEST_OUTPUT" - | grep -qE '^.?2\. Second chapter$' || { echo "the second chapter is not numbered 2"; exit 1; }
+---
+
+# Preface {.unnumbered}
+
+The preface.

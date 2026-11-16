@@ -13,7 +13,7 @@ _quarto:
   tests:
     run:
       extension-test:
-        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | tr -d ' \n' | grep -q 'DRAFT“v2”\|DRAFT"v2"' && grep -q 'background:' "${EXTENSION_TEST_INPUT%.qmd}.typ"
+        check: pdftotext "$EXTENSION_TEST_OUTPUT" - | tr -d ' \n' | grep -q 'DRAFT“v2”\|DRAFT"v2"' && grep -qE '^#set page\(background:[[:space:]]align\(.*image\("figure\.svg"' "${EXTENSION_TEST_INPUT%.qmd}.typ"
     typst:
       noErrors: default
       ensureTypstFileRegexMatches:

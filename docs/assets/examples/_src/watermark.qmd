@@ -1,0 +1,23 @@
+---
+format:
+  typst:
+    papersize: a6
+    margin:
+      x: 1.2cm
+      y: 1.2cm
+    fontsize: 9pt
+filters:
+  - typst-extras
+extensions:
+  typst-extras:
+    watermark:
+      text: "DRAFT"
+      opacity: 15%
+      angle: -45deg
+      colour: gray
+---
+
+# Draft report
+
+Every page of this document carries the watermark.
+The text sits in the page foreground, in grey, at 15% opacity.

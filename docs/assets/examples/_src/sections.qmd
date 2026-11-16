@@ -1,0 +1,40 @@
+---
+format:
+  typst:
+    papersize: a6
+    margin:
+      x: 1.2cm
+      y: 1.2cm
+    fontsize: 9pt
+filters:
+  - typst-extras
+number-sections: true
+crossref:
+  chapters: true
+---
+
+# Method
+
+| Name  | Value |
+|-------|-------|
+| alpha | 1     |
+
+: A small table. {#tbl-values}
+
+See @tbl-values, @sec-extra and @tbl-extra.
+
+# Extra results {.appendix #sec-extra}
+
+| Name  | Value |
+|-------|-------|
+| gamma | 3     |
+
+: A table in the appendix. {#tbl-extra}
+
+# Raw data {.supplementary}
+
+| Name  | Value |
+|-------|-------|
+| delta | 4     |
+
+: A supplementary table. {#tbl-raw}

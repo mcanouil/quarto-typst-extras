@@ -14,7 +14,7 @@ _quarto:
           pdftotext "$EXTENSION_TEST_OUTPUT" - | awk '/^.?Contents$/ && !c {c=NR} /^.?List of Figures$/ && !l {l=NR} END {exit !(c && l && c < l)}' || { echo "lists out of order"; exit 1; }
           pdftotext -f 1 -l 1 -raw "$EXTENSION_TEST_OUTPUT" - | tr -d ' \n' | grep -q DRAFT || { echo "missing watermark"; exit 1; }
           text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
-          for expected in 'Figure 1.1: A blue square.' 'See Figure 1.1.' '(1.1)' 'Note 1.1' 'Theorem 1.1 (A chapter theorem)' 'Figure S1: A supplementary square.' 'See Figure S1 and S1.' '(S1)' 'Note S1' 'Theorem S1 (A supplementary theorem)' 'S1.1' 'Figure 2.1: An extra square.' 'S2 More material' 'Figure S2: A second supplementary square.' '(S2)' 'Note S2' 'See Figure S2, Equation (S2) and Note S2.' 'Figure A.1: An appendix square.' '(A.1)'; do
+          for expected in 'Figure 1.1: A blue square.' 'See Figure 1.1.' '(1.1)' 'Note 1.1' 'Theorem 1.1 (A chapter theorem)' 'Figure S1: A supplementary square.' 'See Figure S1 and S1.' '(S1)' 'Note S1' 'Theorem S1 (A supplementary theorem)' 'S1.1' 'Figure 2.1: An extra square.' 'S2 More material' 'Figure S2: A second supplementary square.' '(S2)' 'Note S2' 'See Figure S2, Equation (S2) and Note S2.' 'Figure A.1: An appendix square.' '(A.1)' 'Theorem S2 (A second supplementary theorem)' 'Note A.1' 'Theorem A.1 (An appendix theorem)'; do
             printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
           done
           ! printf '%s' "$text" | grep -qE 'Figure [0-9]+\.[0-9]+: A supplementary|Figure S[0-9]+: An appendix' || { echo "supplementary numbering leaked"; exit 1; }

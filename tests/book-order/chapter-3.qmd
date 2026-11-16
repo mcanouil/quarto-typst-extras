@@ -1,0 +1,9 @@
+# Third chapter {#sec-third}
+
+![A third square.](figure.svg){#fig-third fig-alt="A blue square."}
+
+$$
+t = 3
+$$ {#eq-third}
+
+See @fig-third and @sec-third.

@@ -1,0 +1,19 @@
+---
+format:
+  typst:
+    papersize: a6
+    margin:
+      x: 1.2cm
+      y: 1.2cm
+    fontsize: 9pt
+filters:
+  - typst-extras
+---
+
+The energy is [$E = mc^2$]{alt="E equals m c squared"}.
+
+::: {alt="The sum of the first n integers equals n times n plus one, over two."}
+$$
+\sum_{i=1}^{n} i = \frac{n (n + 1)}{2}
+$$
+:::

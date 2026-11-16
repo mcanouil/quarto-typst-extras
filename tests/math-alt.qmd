@@ -23,8 +23,11 @@ _quarto:
         - ['math\.equation\(block: (true|false), alt: "[^"]*", \[']
     html:
       ensureFileRegexMatches:
-        - ['x\^2']
-        - ['math\.equation', 'alt="x squared"', 'Euler']
+        - - 'x\^2'
+          - '<span class="keep"><span class="math inline">\\\(y\\\)</span></span>'
+          - '<span alt="mixed">the value <span class="math inline">'
+          - 'div class="kept-div">\s*<p><span class="math display">'
+        - ['math\.equation', 'alt="x squared"', 'Euler', 'alt="kept"', 'alt="kept display"']
 ---
 
 Inline maths with alt text: [$x^2$]{alt="x squared"}.
@@ -35,14 +38,25 @@ $$ e^{i\pi} + 1 = 0 $$
 
 $$ a = b $$ {#eq-a alt="A"}
 
+A kept class: [$y$]{alt="kept" .keep}.
+
+Mixed content: [the value $z$]{alt="mixed"}.
+
+::: {.kept-div alt="kept display"}
+$$ w = 1 $$
+:::
+
 ```{=typst}
 #context {
   let equations = query(math.equation)
-  assert.eq(equations.len(), 3, message: "expected one equation per source maths")
+  assert.eq(equations.len(), 6, message: "expected one equation per source maths")
   assert.eq(equations.map(e => (e.alt, e.block)), (
     ("x squared", false),
     ("Euler's \"identity\" line", true),
     ("A", true),
+    ("kept", false),
+    (none, false),
+    ("kept display", true),
   ))
 }
 ```

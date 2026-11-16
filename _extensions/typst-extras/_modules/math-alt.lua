@@ -7,7 +7,9 @@
 --- @brief Give unlabelled maths an alt text.
 --- @description Turns the `alt` attribute of a Span or Div that holds only maths into `#math.equation(.., alt: ..)`.
 ---   Labelled equations are left to Quarto.
----   In other formats the wrapper is removed and the maths stays as it was.
+---   In other formats the `alt` attribute is removed.
+---   A wrapper that carries nothing but `alt` is removed too, so the maths stays as it was;
+---   a wrapper with an identifier, a class or another attribute is kept.
 
 local emit = require(quarto.utils.resolve_path('_modules/emit.lua'):gsub('%.lua$', ''))
 
@@ -72,6 +74,33 @@ local function only_display_math(div)
   return nil
 end
 
+--- Tell whether an element carries nothing but its `alt` attribute: no identifier, no class, no other attribute.
+--- @param element pandoc.Span|pandoc.Div
+--- @return boolean
+local function only_alt(element)
+  if element.identifier ~= '' or #element.classes > 0 then
+    return false
+  end
+  for key in pairs(element.attributes) do
+    if key ~= 'alt' then
+      return false
+    end
+  end
+  return true
+end
+
+--- Remove the `alt` attribute in a format other than Typst.
+--- The wrapper goes when it carries nothing else, and stays with its other attributes otherwise.
+--- @param element pandoc.Span|pandoc.Div
+--- @return pandoc.Inlines|pandoc.Blocks|pandoc.Span|pandoc.Div
+local function drop_alt(element)
+  if only_alt(element) then
+    return element.content
+  end
+  element.attributes['alt'] = nil
+  return element
+end
+
 --- Wrap maths in the equation call.
 --- @param math pandoc.Math The maths
 --- @param alt string The alt text
@@ -99,7 +128,10 @@ function M.apply(doc, config)
       if math == nil then
         return nil
       end
-      return is_typst and wrap(math, span.attributes['alt']) or span.content
+      if not is_typst then
+        return drop_alt(span)
+      end
+      return wrap(math, span.attributes['alt'])
     end,
     Div = function(div)
       if not is_candidate(div) then
@@ -109,7 +141,10 @@ function M.apply(doc, config)
       if math == nil then
         return nil
       end
-      return is_typst and pandoc.Para(wrap(math, div.attributes['alt'])) or div.content
+      if not is_typst then
+        return drop_alt(div)
+      end
+      return pandoc.Para(wrap(math, div.attributes['alt']))
     end,
   })
 end

@@ -9,7 +9,7 @@
 /// Render one outline for each float kind that has at least one figure.
 ///
 /// - lists (array): Entries of `(kind: str, title: content)`, in display order.
-/// A kind listed twice renders twice, which is a caller error.
+///   A kind listed twice renders twice. The Lua filter lists each kind once.
 ///
 /// - page-break (bool): Put a weak page break after each rendered list.
 #let typst-extras-list-of(lists, page-break: false) = context {
@@ -69,6 +69,8 @@
   appendix-title: "Appendix",
   appendix-delim: " \u{2014}",
   number-sections: false,
+  section-prefix: "Section",
+  chapter-prefix: "Chapter",
 ))
 
 /// Return the prefix of a number at a location. Needs `context`.
@@ -127,7 +129,15 @@
 /// In the body, the theorion counter gives the number.
 /// In an appendix, theorems are counted from the last level-1 heading,
 /// and in a supplementary section from the start of the part, so all supplementary sections share one sequence.
-/// This counts the theorion figures of the same kind, because the theorion counter does not restart at a part.
+/// This counts the numbered theorion figures of the same kind, because the theorion counter does not restart at a part.
+/// Frames with `numbering: none`, such as unnumbered theorems, are not counted,
+/// and nor are frames outside the part, such as the body chapters between two runs of supplementary chapters in a book.
+///
+/// Example, in an appendix whose headings are `= Extra` then `= More`:
+/// a theorem, a lemma and a theorem under `Extra` read `Theorem A.1`, `Lemma A.1` and `Theorem A.2`,
+/// because each kind is counted on its own from `Extra`;
+/// the first theorem under `More` reads `Theorem B.1`, because the count starts again at that heading.
+/// In a supplementary part, the count starts at the part start, so a theorem in the second section reads `Theorem S2`.
 ///
 /// - original (str, function): The current `theorem-numbering`.
 /// - pattern (str): Pattern of the number after the prefix.
@@ -143,7 +153,8 @@
     if frame == none or start == none {
       return typst-extras-wrap(base, pattern, loc: loc)(..nums)
     }
-    let count = query(figure.where(kind: frame.kind).after(start.location()).before(frame.location())).len()
+    let frames = query(figure.where(kind: frame.kind).after(start.location()).before(frame.location()))
+    let count = frames.filter(it => it.numbering != none and typst-extras-part.at(it.location()) == part).len()
     typst-extras-wrap(base, pattern, loc: loc)(count)
   }
 }
@@ -186,7 +197,8 @@
 
 /// Mark the counters before a heading whose template resets them, so `typst-extras-carry-restore` can restore them.
 /// A book resets float and equation counters at each level-1 heading,
-/// so the mark goes before each supplementary chapter after the first.
+/// so the mark goes before each supplementary chapter after the first,
+/// and where a run of supplementary chapters goes back to the body, so a later run can resume.
 #let typst-extras-carry-mark() = [#metadata("carry") <typst-extras-carry>]
 
 /// Restore the counters of each figure kind, and the equation counter, to their values at the last carry mark.
@@ -200,6 +212,36 @@
     target.update(target.at(mark))
   }
   counter(math.equation).update(counter(math.equation).at(mark))
+}
+
+/// Mark the heading counter in the body, before a supplementary part starts in a book,
+/// so `typst-extras-body-restore` can restore it.
+/// The part start sets the heading counter to 0, so without the mark the next body chapter
+/// would continue the supplementary numbering.
+#let typst-extras-body-mark() = [#metadata("body") <typst-extras-body>]
+
+/// Go back to the body after a supplementary part in a book:
+/// set the part to `"body"`, and restore the heading counter to its value at the last body mark.
+/// Put it before the heading of the next body chapter, so that chapter takes the next body number.
+#let typst-extras-body-restore() = {
+  typst-extras-part.update("body")
+  context {
+    let mark = query(selector(<typst-extras-body>).before(here())).last().location()
+    counter(heading).update(counter(heading).at(mark))
+  }
+}
+
+/// Resume a part in a book, after body chapters: set the part,
+/// and restore the heading counter to its value at the last carry mark, where the earlier run of the part ended.
+/// Put `typst-extras-carry-restore` after the next heading, so floats and equations also continue.
+///
+/// - part (str): `"supplementary"`.
+#let typst-extras-part-resume(part) = {
+  typst-extras-part.update(part)
+  context {
+    let mark = query(selector(<typst-extras-carry>).before(here())).last().location()
+    counter(heading).update(counter(heading).at(mark))
+  }
 }
 
 /// Number a heading in an appendix or a supplementary section.
@@ -221,6 +263,21 @@
   }
 }
 
+/// Return the heading numbering of a book: `S1`, `S1.1` in a supplementary chapter,
+/// and the numbering of the book everywhere else.
+/// Set it once at the start of the body, with the numbering in force there:
+/// `show: body => context { set heading(numbering: typst-extras-book-heading-numbering(heading.numbering)); body }`.
+///
+/// - original (str, function, none): The heading numbering of the book.
+/// - config (dictionary): Section settings, as in `typst-extras-config`.
+#let typst-extras-book-heading-numbering(original, config: (:)) = (..nums) => {
+  if typst-extras-part.get() == "supplementary" {
+    typst-extras-heading-numbering(..nums, part: "supplementary", config: config)
+  } else if original != none {
+    numbering(original, ..nums)
+  }
+}
+
 /// Number a heading in an appendix, with the label on level-1 headings:
 /// `appendix-title`, the letter, then `appendix-delim`, such as `Appendix A :`.
 /// The title follows, so a level-1 heading reads `Appendix A : Title`; sub-headings read `A.1`.
@@ -237,12 +294,30 @@
   config.appendix-title + " " + numbering("A", levels.first()) + config.appendix-delim
 }
 
+/// Return the plain text of a reference supplement, such as `"Section"` for `[Section]`.
+/// Spaces become `" "`, and other elements give `""`.
+///
+/// - it (content, str, none): The supplement.
+#let typst-extras-plain-text(it) = {
+  if it == none { return "" }
+  if type(it) == str { return it }
+  if it.has("text") { return it.text }
+  if it.has("children") { return it.children.fold("", (text, child) => text + typst-extras-plain-text(child)) }
+  if it.func() == [ ].func() { return " " }
+  ""
+}
+
 /// Return the label of a heading in an appendix, such as `Appendix A` or `Appendix A.1`,
 /// or in a supplementary section, such as `S1` or `S1.1`. Needs `context`.
 /// It is `none` for a heading in the body or an unnumbered heading.
 ///
 /// - target (content): The heading.
-#let typst-extras-heading-label(target) = {
+/// - supplement (content, auto): The supplement of the reference.
+///   `auto`, or a prefix that Quarto writes itself (`section-prefix` or `chapter-prefix`, such as `Section`),
+///   gives the default label.
+///   An empty supplement, from `-@sec-x`, gives the number alone: `A`, `A.1`, `S1`.
+///   Any other supplement, such as `Annex` from `[Annex @sec-x]`, goes in front of the number: `Annex A`.
+#let typst-extras-heading-label(target, supplement: auto) = {
   if target.numbering == none {
     return none
   }
@@ -253,20 +328,35 @@
   }
   let config = typst-extras-config-state.at(loc)
   let levels = counter(heading).at(loc)
-  if part == "appendix" {
-    config.appendix-title + " " + numbering("A.1", ..levels)
+  let number = if part == "appendix" {
+    numbering("A.1", ..levels)
   } else {
     config.supplementary-prefix + numbering("1.1", ..levels)
+  }
+  let default = if part == "appendix" { config.appendix-title + " " + number } else { number }
+  if supplement == auto {
+    return default
+  }
+  let text = typst-extras-plain-text(supplement).trim()
+  if text == "" {
+    number
+  } else if lower(text) in (lower(config.section-prefix), lower(config.chapter-prefix)) {
+    default
+  } else {
+    text + " " + number
   }
 }
 
 /// Render a reference to a heading in an appendix or a supplementary section with its label,
 /// in place of the supplement that Quarto writes, such as `Section`. Other references stay as they are.
+/// An empty supplement gives the number alone, and a custom supplement stays in front of the number.
 /// Use it as `show ref: typst-extras-ref`.
 ///
 /// - it (content): The reference.
 #let typst-extras-ref(it) = context {
   let target = it.element
-  let label = if target != none and target.func() == heading { typst-extras-heading-label(target) }
+  let label = if target != none and target.func() == heading {
+    typst-extras-heading-label(target, supplement: it.supplement)
+  }
   if label == none { it } else { link(target.location(), label) }
 }

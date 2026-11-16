@@ -101,7 +101,7 @@ See the [Reference](reference.qmd) for every option, and the [Examples](examples
 
 Every module acts on Typst output only.
 In other formats, the document stays as it is, except that the `alt` attribute on a formula is removed.
-The extension needs Quarto 1.12 or newer.
+The extension needs Quarto 1.11.9 or newer.
 
 ## Links
 

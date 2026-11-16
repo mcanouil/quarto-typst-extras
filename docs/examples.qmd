@@ -6,7 +6,7 @@ description: "Worked examples of the four Typst Extras modules, each with the so
 
 The examples come from the [`example.qmd`](https://github.com/mcanouil/quarto-typst-extras/blob/main/example.qmd) file in the repository and from the tests of the extension.
 Render them with `quarto render example.qmd --to typst`.
-This site renders HTML, so each section shows the source and the text that the Typst PDF contains.
+This site renders HTML, so each section shows the source, the text that the Typst PDF contains, and an image of the rendered page.
 
 ## Lists of floats
 
@@ -26,6 +26,8 @@ List of Listings
 Listing 1.1 A short script. . . . . 1
 ```
 
+![](assets/examples/list-of.png){fig-alt="A rendered page that starts with a list of tables, with Table 1.1 and Table A.1, and a list of listings, with Listing 1.1, above the body." width="60%"}
+
 ## Alternative text for formulas
 
 ```markdown
@@ -34,6 +36,8 @@ The energy is [$E = mc^2$]{alt="E equals m c squared"}.
 
 The formula looks the same on the page.
 The PDF now carries the alternative text, which a screen reader reads in place of the formula.
+
+![](assets/examples/math-alt.png){fig-alt="A rendered page with the inline formula E equals m c squared and a display formula for the sum of the first n integers, which look the same as without alternative text." width="60%"}
 
 ## Appendix and supplementary sections
 
@@ -74,6 +78,8 @@ S1 Raw data
 
 With `appendix-delimiter: ""`, the appendix table reads `Table A1`.
 
+![](assets/examples/sections.png){fig-alt="A rendered page with the heading 1 Method and Table 1.1, then the heading Appendix A, Extra results, with Table A.1, then the heading S1 Raw data with Table S1. A sentence reads: See Table 1.1, Appendix A and Table A.1." width="60%"}
+
 ## Watermark
 
 ```yaml
@@ -88,6 +94,8 @@ extensions:
 
 Every page carries the text `DRAFT`, in grey at 15% opacity and rotated by 45 degrees.
 To use an image, replace `text` with `image: path/to/image.svg`, and fade the image file first.
+
+![](assets/examples/watermark.png){fig-alt="A rendered page with the heading Draft report and a short paragraph, and the word DRAFT in light grey, rotated across the middle of the page." width="60%"}
 
 ## Source
 

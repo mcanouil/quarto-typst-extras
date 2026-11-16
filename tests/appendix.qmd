@@ -16,12 +16,15 @@ _quarto:
           if [ "$EXTENSION_TEST_FORMAT" != typst ]; then exit 0; fi
           dash="$(printf '\342\200\224')"
           text="$(pdftotext "$EXTENSION_TEST_OUTPUT" - | tr '\n' ' ')"
-          for expected in "Appendix A $dash Extra" "Appendix B $dash More" 'Figure A.1: Extra square' 'Figure B.1: More square' 'Theorem 1 (A body theorem)' 'Theorem A.1 (An appendix theorem)' 'See Appendix A for more' 'see Appendix A.1 for detail' 'see Figure A.1' '(A.1)' 'Figure 1: Body square'; do
+          for expected in "Appendix A $dash Extra" "Appendix B $dash More" 'Figure A.1: Extra square' 'Figure B.1: More square' 'Theorem 1 (A body theorem)' 'Theorem A.1 (An appendix theorem)' 'Lemma A.1 (An appendix lemma)' 'Theorem A.2 (A second appendix theorem)' 'See Appendix A for more' 'see Appendix A.1 for detail' 'see Figure A.1' '(A.1)' 'Figure 1: Body square' 'Bare A and bare A.1.' 'Custom Annex A.1.'; do
             printf '%s' "$text" | grep -qF "$expected" || { echo "missing: $expected"; exit 1; }
           done
           printf '%s' "$text" | grep -qE "Intro.*Methods.*Appendix A $dash Extra.*Appendix B $dash More.*Bibliography" || { echo "wrong order"; exit 1; }
           test "$(printf '%s' "$text" | grep -o 'Methods' | wc -l)" -eq 1 || { echo "Methods is not once"; exit 1; }
           ! printf '%s' "$text" | grep -qE "(Appendix [A-Z] $dash|[0-9]) Bibliography" || { echo "the bibliography title is numbered"; exit 1; }
+          typ="${EXTENSION_TEST_INPUT%.qmd}.typ"
+          resets="$(awk '/^#typst-extras-part-start\("appendix"/ { part = 1; next } part && /^= / { exit } part && /typst-extras-reset/ { n++ } END { print n + 0 }' "$typ")"
+          test "$resets" -eq 0 || { echo "$resets resets between the appendix part start and the first appendix heading"; exit 1; }
     typst:
       noErrors: default
       ensureTypstFileRegexMatches:
@@ -46,6 +49,8 @@ A statement.
 
 See @sec-extra for more, see @sec-extra-detail for detail, and see @fig-extra.
 The details come from @knuth1984.
+Bare -@sec-extra and bare -@sec-extra-detail.
+Custom [Annex @sec-extra-detail].
 
 # Extra {.appendix #sec-extra}
 
@@ -58,6 +63,20 @@ $$ {#eq-extra}
 ::: {#thm-extra}
 
 ## An appendix theorem
+
+A statement.
+:::
+
+::: {#lem-extra}
+
+## An appendix lemma
+
+A statement.
+:::
+
+::: {#thm-extra-two}
+
+## A second appendix theorem
 
 A statement.
 :::

@@ -1,0 +1,16 @@
+# Second supplement {.supplementary #sec-supp-two}
+
+![A second supplementary square.](figure.svg){#fig-supp-two fig-alt="A blue square."}
+
+$$
+z = 3
+$$ {#eq-supp-two}
+
+::: {#thm-supp-two}
+
+## A second supplementary theorem
+
+A statement.
+:::
+
+See @sec-supp-one, @sec-supp-two, @fig-supp-two and @thm-supp-two.
