@@ -9,5 +9,5 @@ authors:
 repository-code: "https://github.com/mcanouil/quarto-typst-extras"
 url: "https://m.canouil.dev/quarto-typst-extras/"
 license: "MIT License"
-date-released: "2026-11-15"
-version: 0.0.0
+date-released: "2026-11-16"
+version: 0.1.0
