@@ -237,9 +237,12 @@ The value is `"body"`, `"appendix"` or `"supplementary"`.
 The key is stable, so a template does not need the library of the extension to read it.
 Quarto puts the template before the library in the Typst file, so the template cannot call the functions of the library.
 Read the state in `context`, with `"body"` as the default value.
+Before the extension changes the part, the state gives the default value of the template, so a different default gives a wrong part in the body.
 
 ```typst
 #let part-at(loc) = state("typst-extras-part", "body").at(loc)
+
+#context part-at(here())
 ```
 
 ## Watermark
