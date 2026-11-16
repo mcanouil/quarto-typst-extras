@@ -83,6 +83,11 @@
 
 #typst-extras-part-start("appendix", kinds)
 #context assert.eq(typst-extras-part.get(), "appendix")
+#context assert.eq(
+  state("typst-extras-part", "body").get(),
+  "appendix",
+  message: "templates read the part by the documented state key",
+)
 #context assert.eq(counter(heading).get(), (0,), message: "the part starts the heading counter again")
 #set heading(numbering: typst-extras-appendix-numbering.with(config: config))
 = Extra <extra>
