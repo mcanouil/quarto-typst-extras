@@ -149,6 +149,8 @@ The numbers restart at every numbered level-1 heading.
 - Without `number-sections`, the render warns and the numbers stay flat.
 - The extension sets `theorem-inherited-levels` to `1` for this, so a theorem restarts at each level-1 heading.
   This replaces a value that your template sets.
+- Before the first numbered level-1 heading, the numbers have no chapter prefix: `Figure 1`.
+  This is also true for a whole document when the template does not number its headings.
 - In a book, Quarto already numbers by chapter, and the extension adds nothing to that.
 
 ### Appendices
@@ -293,8 +295,6 @@ These problems let the render finish, with a warning:
   The parent figure reads `Figure 2.2`, and `@fig-left` reads `Figure 2a`.
   Quarto builds the sub-figure number inside its own function.
   Refer to the parent figure when the number must be exact.
-- With chapter numbers on, a float before the first numbered level-1 heading reads `Figure 0.1`.
-  Put the first float after the first numbered level-1 heading.
 - Floats in a wide block (`column: page` and similar) keep flat numbers, because Quarto gives them their own numbering.
 - The numbering needs Quarto's `numbering.typ` in the template.
   A custom format that replaces the whole `template.typ` without `$numbering.typ()$` breaks the wraps.
