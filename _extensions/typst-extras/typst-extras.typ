@@ -74,8 +74,8 @@
 ))
 
 /// Return the prefix of a number at a location. Needs `context`.
-/// It is `""` in the body without chapters, `"<chapter>."` in the body with chapters,
-/// `""` in the body before the first numbered level-1 heading, as when the template leaves headings unnumbered,
+/// It is `""` in the body without chapters, `"<chapter>."` in the body with chapters
+/// (`""` before the first numbered level-1 heading),
 /// the appendix letter and `appendix-delimiter` in an appendix,
 /// and `supplementary-prefix` in a supplementary section.
 /// The appendix letter comes from the heading counter, which `typst-extras-part-start` sets to 0.

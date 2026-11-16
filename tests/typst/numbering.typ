@@ -39,6 +39,18 @@
 #fig[before]
 #figure-reads("1", kind: "quarto-float-fig")
 
+// A template that leaves headings unnumbered never steps the heading counter, so numbers stay flat.
+#[
+  #set heading(numbering: none)
+  #typst-extras-reset-chapter(kinds)
+  = Unnumbered one
+  #context assert.eq(typst-extras-prefix(), "", message: "an unnumbered level-1 heading gives no chapter prefix")
+  #fig[unnumbered]
+  #figure-reads("2")
+  #math.equation(block: true, numbering: equation-numbering, $ u $)
+  #equation-reads("(1)")
+]
+
 #typst-extras-reset-chapter(kinds)
 = One
 #fig[a]
